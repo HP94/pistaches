@@ -1,65 +1,154 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase/client'
+import { getUserHouseholds, type Household } from '@/lib/supabase/households'
+import HouseholdSwitcher from '@/components/HouseholdSwitcher'
 
 export default function Home() {
+  const router = useRouter()
+  const [currentHousehold, setCurrentHousehold] = useState<Household | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [copySuccess, setCopySuccess] = useState(false)
+
+  const handleCopyCode = async () => {
+    if (currentHousehold?.invitation_code) {
+      await navigator.clipboard.writeText(currentHousehold.invitation_code)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    }
+  }
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      
+      setUserId(user.id)
+      
+      // Check if user has any households
+      const { data: households, error } = await getUserHouseholds(user.id)
+      
+      if (error || !households || households.length === 0) {
+        // No household, redirect to selection page
+        router.push('/select-household')
+        return
+      }
+      
+      // Set current household (first one for now)
+      setCurrentHousehold(households[0])
+      setLoading(false)
+    }
+    
+    init()
+  }, [router])
+
+  const handleHouseholdChange = (household: Household) => {
+    setCurrentHousehold(household)
+    router.refresh()
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900">
+        <div className="text-center text-slate-400">Chargement...</div>
+      </div>
+    )
+  }
+
+  if (!currentHousehold) {
+    return null // Will redirect
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-8">
+      <div className="w-full max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-5xl font-bold text-white sm:text-6xl">
+            Equal Housing
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg text-slate-300 sm:text-xl">
+            Suivez et visualisez la répartition des tâches ménagères
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Household Info Card */}
+        <div className="relative rounded-lg border border-white/10 bg-white/5 p-6">
+          {/* Changer de foyer button - top right */}
+          <div className="absolute top-4 right-4">
+            <HouseholdSwitcher
+              currentHousehold={currentHousehold}
+              onHouseholdChange={handleHouseholdChange}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          
+          {/* Foyer actif label */}
+          <p className="text-sm text-slate-400 mb-1">Foyer actif</p>
+          
+          {/* Household name */}
+          <p className="text-2xl font-bold text-white mb-4">{currentHousehold.name}</p>
+          
+          {/* Invitation Code - inline with label */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">Code d'invitation</span>
+            <div className="flex-1 rounded border border-white/10 bg-white/5 px-3 py-1.5">
+              <span className="text-base font-bold text-teal-400 font-mono">{currentHousehold.invitation_code}</span>
+            </div>
+            <button
+              onClick={handleCopyCode}
+              className="rounded border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors"
+              title="Copier le code"
+            >
+              {copySuccess ? '✓' : '📋'}
+            </button>
+          </div>
         </div>
-      </main>
+
+        {/* Quick Actions */}
+        <div className="space-y-3">
+          <Link
+            href="/participants"
+            className="block rounded-lg border border-teal-500/50 bg-teal-500/10 px-6 py-4 text-center font-medium text-teal-400 transition-colors hover:bg-teal-500/20"
+          >
+            Voir les membres
+          </Link>
+          <Link
+            href="/tasks"
+            className="block rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-center font-medium text-white transition-colors hover:bg-white/10"
+          >
+            Voir les tâches
+          </Link>
+        </div>
+
+        {/* Features */}
+        <div className="grid gap-4 sm:grid-cols-3 pt-4">
+          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <h3 className="mb-2 font-semibold text-white">Suivre les tâches</h3>
+            <p className="text-sm text-slate-400">
+              Attribuez des points à chaque tâche ménagère
+            </p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <h3 className="mb-2 font-semibold text-white">Charge mentale</h3>
+            <p className="text-sm text-slate-400">
+              Prenez en compte le travail de planification et de réflexion
+            </p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <h3 className="mb-2 font-semibold text-white">Voir l'équilibre</h3>
+            <p className="text-sm text-slate-400">
+              Visualisez qui en fait plus ou moins
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
