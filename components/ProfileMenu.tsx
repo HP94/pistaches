@@ -49,7 +49,7 @@ export default function ProfileMenu() {
       {/* Profile Icon Button - Bottom Left */}
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className="fixed bottom-[30px] left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition-colors hover:bg-white/10 sm:hidden"
+        className="fixed bottom-[30px] left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#1F2937] shadow-md transition-colors hover:bg-gray-50 sm:hidden"
         aria-label="Menu profil"
       >
         <span className="text-lg font-semibold">{userInitial}</span>
@@ -65,18 +65,18 @@ export default function ProfileMenu() {
           />
           
           {/* Menu */}
-          <div className="fixed bottom-[90px] left-4 z-50 w-64 rounded-lg border border-white/10 bg-slate-900/95 backdrop-blur-sm p-4 shadow-lg sm:hidden">
+          <div className="fixed bottom-[90px] left-4 z-50 w-64 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm p-4 shadow-xl sm:hidden">
             <div className="space-y-3">
               {/* Email */}
-              <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-xs text-slate-400 mb-1">Email</p>
-                <p className="text-sm font-medium text-white">{user.email}</p>
+              <div className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3">
+                <p className="text-xs text-[#6B7280] mb-1">Email</p>
+                <p className="text-sm font-medium text-[#1F2937]">{user.email}</p>
               </div>
 
               {/* Sign Out Button */}
               <button
                 onClick={handleSignOut}
-                className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                className="w-full rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
               >
                 Se déconnecter
               </button>

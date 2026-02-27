@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { updatePassword } from '@/lib/supabase/auth'
 import { supabase } from '@/lib/supabase/client'
 
 export default function UpdatePasswordPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -94,9 +93,9 @@ export default function UpdatePasswordPage() {
 
   if (isValidToken === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
         <div className="text-center">
-          <div className="text-slate-400">Vérification du lien...</div>
+          <div className="text-[#6B7280]">Vérification du lien...</div>
         </div>
       </div>
     )
@@ -104,17 +103,17 @@ export default function UpdatePasswordPage() {
 
   if (isValidToken === false) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
         <div className="w-full max-w-md text-center">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
             <div className="mb-4 text-4xl">⚠️</div>
-            <h2 className="text-2xl font-bold text-white mb-2">Lien invalide</h2>
-            <p className="text-slate-400 mb-4">
+            <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Lien invalide</h2>
+            <p className="text-[#6B7280] mb-4">
               {error || 'Le lien de réinitialisation est invalide ou a expiré. Veuillez demander un nouveau lien.'}
             </p>
             <Link
               href="/reset-password"
-              className="inline-block rounded-lg bg-teal-500 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+              className="inline-block rounded-lg bg-[#93C572] px-6 py-3 font-medium text-[#1F2937] transition-colors hover:bg-[#7bad5c]"
             >
               Demander un nouveau lien
             </Link>
@@ -126,12 +125,12 @@ export default function UpdatePasswordPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
         <div className="w-full max-w-md text-center">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
             <div className="mb-4 text-4xl">✅</div>
-            <h2 className="text-2xl font-bold text-white mb-2">Mot de passe mis à jour !</h2>
-            <p className="text-slate-400 mb-4">
+            <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Mot de passe mis à jour !</h2>
+            <p className="text-[#6B7280] mb-4">
               Votre mot de passe a été modifié avec succès. Redirection vers la page de connexion...
             </p>
           </div>
@@ -141,23 +140,24 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white">Equal Housing</h1>
-          <p className="mt-2 text-slate-400">Créer un nouveau mot de passe</p>
+          <img src="/pistaches-logo.svg" alt="Pistâches" className="mx-auto h-14 w-14" />
+          <h1 className="mt-3 text-4xl font-bold text-[#1F2937]">Pistâches</h1>
+          <p className="mt-2 text-[#6B7280]">Créer un nouveau mot de passe</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
           <form onSubmit={handleUpdatePassword} className="space-y-6">
             {error && (
-              <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 text-sm text-red-400">
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-[#6B7280] mb-2">
                 Nouveau mot de passe
               </label>
               <input
@@ -167,13 +167,13 @@ export default function UpdatePasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/30"
                 placeholder="Au moins 6 caractères"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#6B7280] mb-2">
                 Confirmer le nouveau mot de passe
               </label>
               <input
@@ -183,7 +183,7 @@ export default function UpdatePasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/30"
                 placeholder="Confirmez votre nouveau mot de passe"
               />
             </div>
@@ -191,14 +191,14 @@ export default function UpdatePasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-teal-500 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg bg-[#93C572] px-4 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-400">
-            <Link href="/login" className="text-teal-400 hover:text-teal-300 transition-colors">
+          <p className="mt-6 text-center text-sm text-[#6B7280]">
+            <Link href="/login" className="text-[#93C572] hover:text-[#7bad5c] transition-colors">
               Retour à la connexion
             </Link>
           </p>

@@ -356,16 +356,16 @@ export default function ParticipantsPage() {
 
   if (showCreateForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-8">
+      <div className="min-h-screen bg-[#FAFAF8] px-6 py-8">
         <div className="mx-auto max-w-md">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold text-white">Créer un foyer</h1>
-            <p className="mt-2 text-slate-400">
+            <h1 className="text-3xl font-bold text-[#1F2937]">Créer un foyer</h1>
+            <p className="mt-2 text-[#6B7280]">
               Créez votre premier foyer pour commencer
             </p>
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/5 p-6">
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-6">
             <form onSubmit={handleCreateHousehold} className="space-y-4">
               {error && (
                 <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 text-sm text-red-400">
@@ -374,7 +374,7 @@ export default function ParticipantsPage() {
               )}
 
               <div>
-                <label htmlFor="householdName" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="householdName" className="block text-sm font-medium text-[#6B7280] mb-2">
                   Nom du foyer
                 </label>
                 <input
@@ -382,14 +382,14 @@ export default function ParticipantsPage() {
                   type="text"
                   value={createHouseholdName}
                   onChange={(e) => setCreateHouseholdName(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   placeholder="Mon foyer"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full rounded-lg bg-teal-500 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+                className="w-full rounded-lg bg-[#93C572] px-4 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
               >
                 Créer le foyer
               </button>
@@ -402,22 +402,22 @@ export default function ParticipantsPage() {
 
   if (loading && participants.length === 0 && !currentHousehold) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-8">
+      <div className="min-h-screen bg-[#FAFAF8] px-6 py-8">
         <div className="mx-auto max-w-4xl">
-          <div className="text-center text-slate-400">Chargement...</div>
+          <div className="text-center text-[#6B7280]">Chargement...</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-8">
+    <div className="min-h-screen bg-[#FAFAF8] px-6 py-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white">Membres</h1>
-              <p className="mt-2 text-slate-400">
+              <h1 className="text-3xl font-bold text-[#1F2937]">Membres</h1>
+              <p className="mt-2 text-[#6B7280]">
                 Ajoutez et gérez les membres du foyer
               </p>
             </div>
@@ -438,7 +438,7 @@ export default function ParticipantsPage() {
             {!showForm && (
               <button
                 onClick={() => setShowForm(true)}
-                className="rounded-lg bg-teal-500 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+                className="rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
               >
                 + Ajouter un membre
               </button>
@@ -454,13 +454,13 @@ export default function ParticipantsPage() {
 
 
         {showForm && (
-          <div className="mb-8 rounded-lg border border-white/10 bg-white/5 p-6">
-            <h2 className="mb-4 text-xl font-semibold text-white">
+          <div className="mb-8 rounded-lg border border-[#E5E7EB] bg-white p-6">
+            <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">
               {editingParticipant ? 'Modifier le membre' : 'Nouveau membre'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="name" className="block text-sm font-medium text-[#6B7280] mb-2">
                   Nom
                 </label>
                 <input
@@ -469,13 +469,13 @@ export default function ParticipantsPage() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   placeholder="Nom du membre"
                 />
               </div>
 
               <div>
-                <label htmlFor="gender" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="gender" className="block text-sm font-medium text-[#6B7280] mb-2">
                   Genre
                 </label>
                 <select
@@ -483,7 +483,7 @@ export default function ParticipantsPage() {
                   value={formGender}
                   onChange={(e) => setFormGender(e.target.value as Gender)}
                   required
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                 >
                   <option value="male">Homme</option>
                   <option value="female">Femme</option>
@@ -494,7 +494,7 @@ export default function ParticipantsPage() {
               <div className="flex gap-4">
                 <button
                   type="submit"
-                  className="flex-1 rounded-lg bg-teal-500 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+                  className="flex-1 rounded-lg bg-[#93C572] px-4 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
                 >
                   {editingParticipant ? 'Modifier' : 'Créer'}
                 </button>
@@ -506,7 +506,7 @@ export default function ParticipantsPage() {
                     setFormName('')
                     setFormGender('neutral')
                   }}
-                  className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-white transition-colors hover:bg-white/10"
+                  className="flex-1 rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                 >
                   Annuler
                 </button>
@@ -516,11 +516,11 @@ export default function ParticipantsPage() {
         )}
 
         {participants.length === 0 && !showForm ? (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
-            <p className="text-slate-400 mb-4">Aucun membre pour le moment.</p>
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
+            <p className="text-[#6B7280] mb-4">Aucun membre pour le moment.</p>
             <button
               onClick={() => setShowForm(true)}
-              className="rounded-lg bg-teal-500 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+              className="rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
             >
               Ajouter le premier membre
             </button>
@@ -530,24 +530,24 @@ export default function ParticipantsPage() {
             {participants.map((participant) => (
               <div
                 key={participant.id}
-                className="rounded-lg border border-white/10 bg-white/5 p-6"
+                className="rounded-lg border border-[#E5E7EB] bg-white p-6"
               >
                 <div className="mb-4 flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-[#1F2937]">
                       {participant.name}
                     </h3>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-[#6B7280]">
                       {translateGender(participant.gender)}
                       {participant.user_id && (
-                        <span className="ml-2 text-xs text-teal-400">(Compte)</span>
+                        <span className="ml-2 text-xs text-[#8B5CF6]">(Compte)</span>
                       )}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(participant)}
-                      className="text-teal-400 hover:text-teal-300 transition-colors"
+                      className="text-[#8B5CF6] hover:text-teal-300 transition-colors"
                       title="Modifier"
                     >
                       ✏️
@@ -566,25 +566,25 @@ export default function ParticipantsPage() {
                 {(() => {
                   const stats = getParticipantAssignmentStats(participant.id)
                   return (
-                    <div className="mb-4 rounded-lg bg-slate-800/50 p-3">
-                      <p className="text-xs text-slate-400 mb-2">Tâches assignées : {stats.total}</p>
+                    <div className="mb-4 rounded-lg border border-[#E5E7EB] bg-[#FAFAF8] p-3">
+                      <p className="text-xs text-[#6B7280] mb-2">Tâches assignées : {stats.total}</p>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <span className="text-slate-400">Réalisées : </span>
-                          <span className="font-semibold text-teal-400">{stats.performed}</span>
+                          <span className="text-[#6B7280]">Réalisées : </span>
+                          <span className="font-semibold text-[#8B5CF6]">{stats.performed}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400">Pensées : </span>
-                          <span className="font-semibold text-purple-400">{stats.thought}</span>
+                          <span className="text-[#6B7280]">Pensées : </span>
+                          <span className="font-semibold text-[#8B5CF6]">{stats.thought}</span>
                         </div>
                       </div>
                     </div>
                   )
                 })()}
 
-                <div className="rounded-lg bg-slate-800/50 p-3 mb-4">
-                  <p className="text-xs text-slate-400 mb-1">Balance (par semaine)</p>
-                  <p className="text-2xl font-bold text-white">
+                <div className="rounded-lg border border-[#E5E7EB] bg-[#FAFAF8] p-3 mb-4">
+                  <p className="text-xs text-[#6B7280] mb-1">Balance (par semaine)</p>
+                  <p className="text-2xl font-bold text-[#1F2937]">
                     {balances[participant.id]?.toLocaleString() || 0} pts/sem
                   </p>
                 </div>
@@ -592,7 +592,7 @@ export default function ParticipantsPage() {
                 {/* Assign Task Button */}
                 <button
                   onClick={() => openAssignModal(participant)}
-                  className="w-full mb-4 rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                  className="w-full mb-4 rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c]"
                 >
                   ➕ Assigner une tâche
                 </button>
@@ -603,7 +603,7 @@ export default function ParticipantsPage() {
                   if (participantAssignments.length === 0) return null
 
                   return (
-                    <div className="border-t border-white/10 pt-4">
+                    <div className="border-t border-[#E5E7EB] pt-4">
                       <button
                         onClick={() => {
                           const newExpanded = new Set(expandedParticipants)
@@ -614,7 +614,7 @@ export default function ParticipantsPage() {
                           }
                           setExpandedParticipants(newExpanded)
                         }}
-                        className="w-full flex items-center justify-between text-sm text-slate-300 hover:text-white transition-colors"
+                        className="w-full flex items-center justify-between text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors"
                       >
                         <span>Détails tâches</span>
                         <span>{expandedParticipants.has(participant.id) ? '▼' : '▶'}</span>
@@ -629,21 +629,21 @@ export default function ParticipantsPage() {
                             return (
                               <div
                                 key={assignment.id}
-                                className="rounded border border-white/10 bg-white/5 p-2 text-xs"
+                                className="rounded border border-[#E5E7EB] bg-white p-2 text-xs"
                               >
-                                <p className="font-medium text-white">
+                                <p className="font-medium text-[#1F2937]">
                                   {translateTaskName(task.task_templates.name)}
                                 </p>
                                 <div className="mt-1 space-y-1">
                                   {isPerformer && (
-                                    <p className="text-teal-400">
+                                    <p className="text-[#8B5CF6]">
                                       ✓ Réalisée {assignment.frequency_per_week 
                                         ? `${assignment.frequency_per_week}x/semaine`
                                         : '(ponctuelle)'}
                                     </p>
                                   )}
                                   {isThinker && (
-                                    <p className="text-purple-400">
+                                    <p className="text-[#8B5CF6]">
                                       💭 Charge mentale {assignment.frequency_per_week 
                                         ? `${assignment.frequency_per_week}x/semaine`
                                         : '(ponctuelle)'}
@@ -666,9 +666,9 @@ export default function ParticipantsPage() {
         {/* Assign Task Modal */}
         {showAssignModal && assigningToParticipant && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-lg border border-white/10 bg-slate-900/95 p-8">
+            <div className="w-full max-w-2xl rounded-lg border border-[#E5E7EB] bg-white p-8">
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold text-[#1F2937]">
                   Assigner une tâche à {assigningToParticipant.name}
                 </h2>
                 <button
@@ -680,7 +680,7 @@ export default function ParticipantsPage() {
                     setSelectedTemplate(null)
                     setSelectedTask(null)
                   }}
-                  className="text-slate-400 hover:text-white transition-colors"
+                  className="text-[#6B7280] hover:text-[#1F2937] transition-colors"
                 >
                   ✕
                 </button>
@@ -688,10 +688,10 @@ export default function ParticipantsPage() {
 
               {/* Step Indicator */}
               <div className="mb-6 flex items-center gap-2">
-                <div className={`flex-1 h-1 rounded ${assignStep >= 1 ? 'bg-teal-500' : 'bg-white/10'}`} />
-                <div className={`flex-1 h-1 rounded ${assignStep >= 2 ? 'bg-teal-500' : 'bg-white/10'}`} />
+                <div className={`flex-1 h-1 rounded ${assignStep >= 1 ? 'bg-[#93C572]' : 'bg-gray-100'}`} />
+                <div className={`flex-1 h-1 rounded ${assignStep >= 2 ? 'bg-[#93C572]' : 'bg-gray-100'}`} />
               </div>
-              <div className="mb-6 text-center text-sm text-slate-400">
+              <div className="mb-6 text-center text-sm text-[#6B7280]">
                 Étape {assignStep}/2
               </div>
 
@@ -700,7 +700,7 @@ export default function ParticipantsPage() {
                 <div className="space-y-4">
                   {/* Category Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-[#6B7280] mb-2">
                       Catégorie
                     </label>
                     <select
@@ -709,12 +709,12 @@ export default function ParticipantsPage() {
                         setSelectedCategory(e.target.value as TaskCategory | '')
                         setSelectedTemplate(null)
                       }}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                      className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                     >
                       <option value="">Toutes les catégories</option>
                       <option value="cleaning">Nettoyage</option>
                       <option value="cooking">Cuisine</option>
-                      <option value="childcare">Garde d'enfants</option>
+                      <option value="parenting">Parentalité</option>
                       <option value="laundry">Lessive</option>
                       <option value="shopping">Courses</option>
                       <option value="car_maintenance">Entretien automobile</option>
@@ -726,11 +726,11 @@ export default function ParticipantsPage() {
 
                   {/* Template Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-[#6B7280] mb-2">
                       Tâche {selectedCategory && `(${translateCategory(selectedCategory)})`}
                     </label>
                     {filteredTemplates.length === 0 ? (
-                      <div className="text-sm text-slate-400 py-2">
+                      <div className="text-sm text-[#6B7280] py-2">
                         <p>
                           {selectedCategory 
                             ? `Aucune tâche disponible dans la catégorie "${translateCategory(selectedCategory)}".`
@@ -754,7 +754,7 @@ export default function ParticipantsPage() {
                             setSelectedTemplate(null)
                           }
                         }}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                       >
                         <option value="">Sélectionnez une tâche</option>
                         {filteredTemplates.map((template) => (
@@ -776,14 +776,14 @@ export default function ParticipantsPage() {
                         setSelectedCategory('')
                         setSelectedTemplate(null)
                       }}
-                      className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                     >
                       Annuler
                     </button>
                     <button
                       onClick={handleStep1Next}
                       disabled={!selectedTemplate}
-                      className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Suivant
                     </button>
@@ -795,7 +795,7 @@ export default function ParticipantsPage() {
               {assignStep === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-3">
+                    <label className="block text-sm font-medium text-[#6B7280] mb-3">
                       Type d'assignation
                     </label>
                     <div className="space-y-3">
@@ -804,11 +804,11 @@ export default function ParticipantsPage() {
                           type="checkbox"
                           checked={isPerformer}
                           onChange={(e) => setIsPerformer(e.target.checked)}
-                          className="h-4 w-4 text-teal-500 focus:ring-teal-500 rounded"
+                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572] rounded"
                         />
                         <div>
-                          <span className="text-white font-medium">Réalisation</span>
-                          <p className="text-xs text-slate-400">Le membre effectue la tâche</p>
+                          <span className="text-[#1F2937] font-medium">Réalisation</span>
+                          <p className="text-xs text-[#6B7280]">Le membre effectue la tâche</p>
                         </div>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
@@ -816,18 +816,18 @@ export default function ParticipantsPage() {
                           type="checkbox"
                           checked={isThinker}
                           onChange={(e) => setIsThinker(e.target.checked)}
-                          className="h-4 w-4 text-teal-500 focus:ring-teal-500 rounded"
+                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572] rounded"
                         />
                         <div>
-                          <span className="text-white font-medium">Charge mentale</span>
-                          <p className="text-xs text-slate-400">Le membre pense à la tâche</p>
+                          <span className="text-[#1F2937] font-medium">Charge mentale</span>
+                          <p className="text-xs text-[#6B7280]">Le membre pense à la tâche</p>
                         </div>
                       </label>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-3">
+                    <label className="block text-sm font-medium text-[#6B7280] mb-3">
                       Fréquence
                     </label>
                     <div className="space-y-3">
@@ -840,9 +840,9 @@ export default function ParticipantsPage() {
                             setIsFrequentTask(false)
                             setFrequencyPerWeek(1)
                           }}
-                          className="h-4 w-4 text-teal-500 focus:ring-teal-500"
+                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
                         />
-                        <span className="text-white">Tâche ponctuelle</span>
+                        <span className="text-[#1F2937]">Tâche ponctuelle</span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -850,13 +850,13 @@ export default function ParticipantsPage() {
                           name="frequency"
                           checked={isFrequentTask}
                           onChange={() => setIsFrequentTask(true)}
-                          className="h-4 w-4 text-teal-500 focus:ring-teal-500"
+                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
                         />
-                        <span className="text-white">Tâche fréquente</span>
+                        <span className="text-[#1F2937]">Tâche fréquente</span>
                       </label>
                       {isFrequentTask && (
                         <div className="ml-7">
-                          <label className="block text-xs text-slate-400 mb-1">
+                          <label className="block text-xs text-[#6B7280] mb-1">
                             Fréquence par semaine
                           </label>
                           <input
@@ -865,7 +865,7 @@ export default function ParticipantsPage() {
                             max="14"
                             value={frequencyPerWeek}
                             onChange={(e) => setFrequencyPerWeek(parseInt(e.target.value) || 1)}
-                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                            className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                           />
                         </div>
                       )}
@@ -876,14 +876,14 @@ export default function ParticipantsPage() {
                     <button
                       type="button"
                       onClick={() => setAssignStep(1)}
-                      className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                     >
                       Retour
                     </button>
                     <button
                       onClick={handleAssignTask}
                       disabled={loading || (isFrequentTask && frequencyPerWeek < 1) || (!isPerformer && !isThinker)}
-                      className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Assignation...' : 'Assigner'}
                     </button>

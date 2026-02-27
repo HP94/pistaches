@@ -59,12 +59,12 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
         <div className="w-full max-w-md text-center">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 shadow-md">
             <div className="mb-4 text-4xl">✅</div>
-            <h2 className="text-2xl font-bold text-white mb-2">Compte créé !</h2>
-            <p className="text-slate-400 mb-4">
+            <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Compte créé !</h2>
+            <p className="text-[#6B7280] mb-4">
               Votre compte a été créé avec succès. Redirection vers la page de connexion...
             </p>
           </div>
@@ -74,23 +74,24 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white">Equal Housing</h1>
-          <p className="mt-2 text-slate-400">Créez votre compte</p>
+          <img src="/pistaches-logo.svg" alt="Pistâches" className="mx-auto h-14 w-14" />
+          <h1 className="mt-3 text-4xl font-bold text-[#1F2937]">Pistâches</h1>
+          <p className="mt-2 text-[#6B7280]">Créez votre compte</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 shadow-md">
           <form onSubmit={handleSignup} className="space-y-6">
             {error && (
-              <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 text-sm text-red-400">
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-[#6B7280] mb-2">
                 Email
               </label>
               <input
@@ -99,13 +100,13 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/30"
                 placeholder="votre@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-[#6B7280] mb-2">
                 Mot de passe
               </label>
               <input
@@ -115,13 +116,13 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/30"
                 placeholder="Au moins 6 caractères"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#6B7280] mb-2">
                 Confirmer le mot de passe
               </label>
               <input
@@ -131,7 +132,7 @@ export default function SignupPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/30"
                 placeholder="Confirmez votre mot de passe"
               />
             </div>
@@ -139,7 +140,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-teal-500 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg bg-teal-500 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Création...' : 'Créer un compte'}
             </button>
@@ -148,17 +149,17 @@ export default function SignupPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
+                <div className="w-full border-t border-[#E5E7EB]"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white/5 text-slate-400">ou</span>
+                <span className="px-2 bg-white text-[#6B7280]">ou</span>
               </div>
             </div>
 
             <button
               onClick={handleGoogleSignup}
               disabled={loading}
-              className="mt-6 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="mt-6 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -182,9 +183,9 @@ export default function SignupPage() {
             </button>
           </div>
 
-          <p className="mt-6 text-center text-sm text-slate-400">
+          <p className="mt-6 text-center text-sm text-[#6B7280]">
             Déjà un compte ?{' '}
-            <Link href="/login" className="text-teal-400 hover:text-teal-300 transition-colors">
+            <Link href="/login" className="text-[#93C572] hover:text-[#7bad5c] transition-colors">
               Se connecter
             </Link>
           </p>

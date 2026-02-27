@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Nunito, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import ProfileMenu from "@/components/ProfileMenu";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -15,8 +16,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Equal Housing - Répartition des tâches ménagères",
+  title: "Pistâches - Pister les tâches ménagères",
   description: "Suivez et visualisez la répartition des tâches ménagères et de la charge mentale",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Pistâches",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#93C572",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -27,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-white min-h-screen flex flex-col`}
+        className={`${nunito.variable} ${geistMono.variable} antialiased bg-[#FAFAF8] text-[#1F2937] min-h-screen flex flex-col font-sans`}
         suppressHydrationWarning
       >
         <div className="flex-1 pb-[100px] sm:pb-0">

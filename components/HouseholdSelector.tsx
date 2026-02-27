@@ -34,7 +34,7 @@ export default function HouseholdSelector({ currentHouseholdId, onHouseholdChang
   }, [currentHouseholdId, onHouseholdChange])
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Chargement...</div>
+    return <div className="text-sm text-[#6B7280]">Chargement...</div>
   }
 
   if (households.length === 0) {
@@ -43,7 +43,7 @@ export default function HouseholdSelector({ currentHouseholdId, onHouseholdChang
 
   if (households.length === 1) {
     return (
-      <div className="text-sm text-slate-300">
+      <div className="text-sm text-[#6B7280]">
         {households[0].name}
       </div>
     )
@@ -53,7 +53,7 @@ export default function HouseholdSelector({ currentHouseholdId, onHouseholdChang
     <select
       value={currentHouseholdId || ''}
       onChange={(e) => onHouseholdChange(e.target.value)}
-      className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+      className="rounded-lg border border-[#E5E7EB] bg-white px-4 py-2 text-sm text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/30"
     >
       {households.map((household) => (
         <option key={household.id} value={household.id}>

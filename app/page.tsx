@@ -56,8 +56,8 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900">
-        <div className="text-center text-slate-400">Chargement...</div>
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8]">
+        <div className="text-center text-[#6B7280]">Chargement...</div>
       </div>
     )
   }
@@ -67,20 +67,23 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-8">
+    <div className="flex min-h-screen flex-col bg-[#FAFAF8] px-6 py-8">
       <div className="w-full max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-5xl font-bold text-white sm:text-6xl">
-            Equal Housing
+          <Link href="/" className="inline-block">
+            <img src="/pistaches-logo.svg" alt="Pistâches" className="mx-auto h-16 w-16 sm:h-20 sm:w-20" />
+          </Link>
+          <h1 className="text-5xl font-bold text-[#93C572] sm:text-6xl">
+            Pistâches
           </h1>
-          <p className="text-lg text-slate-300 sm:text-xl">
+          <p className="text-lg text-[#6B7280] sm:text-xl">
             Suivez et visualisez la répartition des tâches ménagères
           </p>
         </div>
 
         {/* Household Info Card */}
-        <div className="relative rounded-lg border border-white/10 bg-white/5 p-6">
+        <div className="relative rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
           {/* Changer de foyer button - top right */}
           <div className="absolute top-4 right-4">
             <HouseholdSwitcher
@@ -90,20 +93,20 @@ export default function Home() {
           </div>
           
           {/* Foyer actif label */}
-          <p className="text-sm text-slate-400 mb-1">Foyer actif</p>
+          <p className="text-sm text-[#6B7280] mb-1">Foyer actif</p>
           
           {/* Household name */}
-          <p className="text-2xl font-bold text-white mb-4">{currentHousehold.name}</p>
+          <p className="text-2xl font-bold text-[#1F2937] mb-4">{currentHousehold.name}</p>
           
           {/* Invitation Code - inline with label */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Code d'invitation</span>
-            <div className="flex-1 rounded border border-white/10 bg-white/5 px-3 py-1.5">
-              <span className="text-base font-bold text-teal-400 font-mono">{currentHousehold.invitation_code}</span>
+            <span className="text-xs text-[#6B7280]">Code d'invitation</span>
+            <div className="flex-1 rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-1.5">
+              <span className="text-base font-bold text-[#93C572] font-mono">{currentHousehold.invitation_code}</span>
             </div>
             <button
               onClick={handleCopyCode}
-              className="rounded border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors"
+              className="rounded-lg border border-[#E5E7EB] bg-gray-50 p-2 hover:bg-gray-100 transition-colors"
               title="Copier le code"
             >
               {copySuccess ? '✓' : '📋'}
@@ -115,35 +118,35 @@ export default function Home() {
         <div className="space-y-3">
           <Link
             href="/participants"
-            className="block rounded-lg border border-teal-500/50 bg-teal-500/10 px-6 py-4 text-center font-medium text-teal-400 transition-colors hover:bg-teal-500/20"
+            className="block rounded-xl border border-[#93C572] bg-[#93C572]/10 px-6 py-4 text-center font-medium text-[#7bad5c] transition-colors hover:bg-[#93C572]/20"
           >
             Voir les membres
           </Link>
           <Link
             href="/tasks"
-            className="block rounded-lg border border-white/20 bg-white/5 px-6 py-4 text-center font-medium text-white transition-colors hover:bg-white/10"
+            className="block rounded-xl border border-[#E5E7EB] bg-white px-6 py-4 text-center font-medium text-[#1F2937] transition-colors hover:bg-gray-50 shadow-sm"
           >
             Voir les tâches
           </Link>
         </div>
 
-        {/* Features */}
-        <div className="grid gap-4 sm:grid-cols-3 pt-4">
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="mb-2 font-semibold text-white">Suivre les tâches</h3>
-            <p className="text-sm text-slate-400">
+        {/* Features - bloc explicatif unique */}
+        <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="py-4 border-b border-[#E5E7EB]">
+            <h3 className="mb-1 font-semibold text-[#1F2937]">Suivre les tâches</h3>
+            <p className="text-sm text-[#6B7280]">
               Attribuez des points à chaque tâche ménagère
             </p>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="mb-2 font-semibold text-white">Charge mentale</h3>
-            <p className="text-sm text-slate-400">
+          <div className="py-4 border-b border-[#E5E7EB]">
+            <h3 className="mb-1 font-semibold text-[#1F2937]">Charge mentale</h3>
+            <p className="text-sm text-[#6B7280]">
               Prenez en compte le travail de planification et de réflexion
             </p>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-            <h3 className="mb-2 font-semibold text-white">Voir l'équilibre</h3>
-            <p className="text-sm text-slate-400">
+          <div className="py-4">
+            <h3 className="mb-1 font-semibold text-[#1F2937]">Voir l'équilibre</h3>
+            <p className="text-sm text-[#6B7280]">
               Visualisez qui en fait plus ou moins
             </p>
           </div>

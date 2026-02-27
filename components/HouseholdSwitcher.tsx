@@ -82,30 +82,30 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+        className="rounded-lg border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-50 shadow-sm"
       >
         Changer de foyer
       </button>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-950 p-6">
+          <div className="w-full max-w-md rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">Changer de foyer</h2>
+              <h2 className="text-2xl font-bold text-[#1F2937]">Changer de foyer</h2>
               <button
                 onClick={() => {
                   setShowModal(false)
                   setShowJoinForm(false)
                   setError(null)
                 }}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-[#6B7280] hover:text-[#1F2937] transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {error && (
-              <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/50 p-3 text-sm text-red-400">
+              <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600">
                 {error}
               </div>
             )}
@@ -114,7 +114,7 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
               <>
                 {households.length > 0 && (
                   <div className="mb-4">
-                    <h3 className="mb-3 text-sm font-medium text-slate-300">Mes foyers</h3>
+                    <h3 className="mb-3 text-sm font-medium text-[#6B7280]">Mes foyers</h3>
                     <div className="space-y-2">
                       {households.map((household) => (
                         <button
@@ -122,13 +122,13 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
                           onClick={() => handleSelectHousehold(household)}
                           className={`w-full rounded-lg border p-3 text-left transition-colors ${
                             household.id === currentHousehold.id
-                              ? 'border-teal-500 bg-teal-500/10 text-teal-400'
-                              : 'border-white/10 bg-white/5 text-white hover:bg-white/10'
+                              ? 'border-[#93C572] bg-[#93C572]/10 text-[#7bad5c]'
+                              : 'border-[#E5E7EB] bg-gray-50 text-[#1F2937] hover:bg-gray-100'
                           }`}
                         >
                           <div className="font-medium">{household.name}</div>
                           {household.id === currentHousehold.id && (
-                            <div className="text-xs text-teal-400">Actuel</div>
+                            <div className="text-xs text-[#93C572]">Actuel</div>
                           )}
                         </button>
                       ))}
@@ -136,19 +136,19 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
                   </div>
                 )}
 
-                <div className="border-t border-white/10 pt-4 space-y-3">
+                <div className="border-t border-[#E5E7EB] pt-4 space-y-3">
                   <button
                     onClick={() => {
                       setShowModal(false)
                       router.push('/select-household')
                     }}
-                    className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-white transition-colors hover:bg-white/10"
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                   >
                     + Créer un nouveau foyer
                   </button>
                   <button
                     onClick={() => setShowJoinForm(true)}
-                    className="w-full rounded-lg border border-teal-500/50 bg-teal-500/10 px-4 py-3 font-medium text-teal-400 transition-colors hover:bg-teal-500/20"
+                    className="w-full rounded-lg border border-[#93C572] bg-[#93C572]/10 px-4 py-3 font-medium text-[#7bad5c] transition-colors hover:bg-[#93C572]/20"
                   >
                     + Rejoindre un foyer avec un code
                   </button>
@@ -157,7 +157,7 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
             ) : (
               <form onSubmit={handleJoinHousehold} className="space-y-4">
                 <div>
-                  <label htmlFor="joinCodeModal" className="block text-sm font-medium text-slate-300 mb-2">
+                  <label htmlFor="joinCodeModal" className="block text-sm font-medium text-[#6B7280] mb-2">
                     Code d'invitation
                   </label>
                   <input
@@ -167,7 +167,7 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
                     onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                     required
                     maxLength={6}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono uppercase text-center text-xl tracking-wider"
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/30 font-mono uppercase text-center text-xl tracking-wider"
                     placeholder="ABC123"
                   />
                 </div>
@@ -175,7 +175,7 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 rounded-lg bg-teal-500 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-lg bg-[#93C572] px-4 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Rejoindre...' : 'Rejoindre'}
                   </button>
@@ -186,7 +186,7 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
                       setJoinCode('')
                       setError(null)
                     }}
-                    className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-white transition-colors hover:bg-white/10"
+                    className="flex-1 rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                   >
                     Retour
                   </button>

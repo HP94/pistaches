@@ -179,8 +179,8 @@ export default function BalancePage() {
 
   if (householdLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
-        <p className="text-slate-400">Chargement...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
+        <p className="text-[#6B7280]">Chargement...</p>
       </div>
     )
   }
@@ -195,29 +195,28 @@ export default function BalancePage() {
   const average = getAveragePoints()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-8">
+    <div className="min-h-screen bg-[#FAFAF8] px-6 py-8">
       <div className="mx-auto max-w-4xl">
-                 <div className="mb-8">
-                   <div className="flex items-center justify-between mb-4">
-                     <div>
-                       <h1 className="text-3xl font-bold text-white">Équilibre du foyer "{currentHousehold.name}"</h1>
-                       <p className="mt-2 text-slate-400">
-                         Répartition du travail entre les membres
-                       </p>
-                     </div>
-                     <div className="flex items-center gap-3">
-                       <label className="text-sm text-slate-300">Période :</label>
-                       <select
-                         value={period}
-                         onChange={(e) => setPeriod(e.target.value as 'weekly' | 'monthly')}
-                         className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                       >
-                         <option value="weekly">Par semaine</option>
-                         <option value="monthly">Par mois</option>
-                       </select>
-                     </div>
-                   </div>
-                 </div>
+<div className="mb-8">
+                  <h1 className="text-3xl font-bold text-[#1F2937]">
+                    Équilibre du foyer<br />
+                    &quot;{currentHousehold.name}&quot;
+                  </h1>
+                  <p className="mt-2 text-[#6B7280]">
+                    Répartition du travail entre les membres
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <label className="text-sm text-[#6B7280]">Période :</label>
+                    <select
+                      value={period}
+                      onChange={(e) => setPeriod(e.target.value as 'weekly' | 'monthly')}
+                      className="rounded-lg border border-[#E5E7EB] bg-white px-4 py-2 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                    >
+                      <option value="weekly">Par semaine</option>
+                      <option value="monthly">Par mois</option>
+                    </select>
+                  </div>
+                </div>
 
         {error && (
           <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 text-sm text-red-400 mb-4">
@@ -226,34 +225,34 @@ export default function BalancePage() {
         )}
 
         {balances.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
-            <p className="text-slate-400">Aucune assignation de tâche. Commencez par assigner des tâches aux membres.</p>
+          <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
+            <p className="text-[#6B7280]">Aucune assignation de tâche. Commencez par assigner des tâches aux membres.</p>
           </div>
         ) : (
           <>
             {/* Summary Card */}
-            <div className="mb-6 rounded-lg border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-4 text-xl font-semibold text-white">Résumé</h2>
+            <div className="mb-6 rounded-lg border border-[#E5E7EB] bg-white p-6">
+              <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">Résumé</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm text-slate-400">Total de points ({period === 'weekly' ? 'semaine' : 'mois'})</p>
-                  <p className="text-2xl font-bold text-white">{total.toFixed(0)} pts</p>
+                  <p className="text-sm text-[#6B7280]">Total de points ({period === 'weekly' ? 'semaine' : 'mois'})</p>
+                  <p className="text-2xl font-bold text-[#1F2937]">{total.toFixed(0)} pts</p>
                 </div>
                 <div>
-                  <p className="text-sm text-slate-400">Nombre de membres</p>
-                  <p className="text-2xl font-bold text-white">{balances.length}</p>
+                  <p className="text-sm text-[#6B7280]">Nombre de membres</p>
+                  <p className="text-2xl font-bold text-[#1F2937]">{balances.length}</p>
                 </div>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="mb-6 flex gap-2 border-b border-white/10">
+            <div className="mb-6 flex gap-2 border-b border-[#E5E7EB]">
               <button
                 onClick={() => setActiveTab('balance')}
                 className={`px-4 py-2 font-medium transition-colors ${
                   activeTab === 'balance'
-                    ? 'border-b-2 border-teal-500 text-teal-400'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'border-b-2 border-[#93C572] text-[#8B5CF6]'
+                    : 'text-[#6B7280] hover:text-[#1F2937]'
                 }`}
               >
                 Répartition
@@ -262,8 +261,8 @@ export default function BalancePage() {
                 onClick={() => setActiveTab('comparison')}
                 className={`px-4 py-2 font-medium transition-colors ${
                   activeTab === 'comparison'
-                    ? 'border-b-2 border-teal-500 text-teal-400'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'border-b-2 border-[#93C572] text-[#8B5CF6]'
+                    : 'text-[#6B7280] hover:text-[#1F2937]'
                 }`}
               >
                 Comparaison
@@ -280,30 +279,30 @@ export default function BalancePage() {
                     return (
                       <div
                         key={balance.participant.id}
-                        className="rounded-lg border border-white/10 bg-white/5 p-6"
+                        className="rounded-lg border border-[#E5E7EB] bg-white p-6"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3">
-                              <h3 className="text-xl font-semibold text-white">
+                              <h3 className="text-xl font-semibold text-[#1F2937]">
                                 {balance.participant.name}
                               </h3>
-                              <span className="text-sm text-slate-400">
+                              <span className="text-sm text-[#6B7280]">
                                 ({translateGender(balance.participant.gender)})
                               </span>
                             </div>
                             
                             <div className="mt-4 grid gap-4 sm:grid-cols-3">
                               <div>
-                                <p className="text-sm text-slate-400">Points performer</p>
-                                <p className="text-lg font-semibold text-teal-400">
+                                <p className="text-sm text-[#6B7280]">Points performer</p>
+                                <p className="text-lg font-semibold text-[#8B5CF6]">
                                   {period === 'weekly' 
                                     ? `${balance.performerPointsWeekly.toFixed(0)} pts/sem`
                                     : `${balance.performerPointsMonthly.toFixed(0)} pts/mois`}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-sm text-slate-400">Points charge mentale</p>
+                                <p className="text-sm text-[#6B7280]">Points charge mentale</p>
                                 <p className="text-lg font-semibold text-purple-400">
                                   {period === 'weekly'
                                     ? `${balance.mentalLoadPointsWeekly.toFixed(0)} pts/sem`
@@ -311,8 +310,8 @@ export default function BalancePage() {
                                 </p>
                               </div>
                               <div>
-                                <p className="text-sm text-slate-400">Total</p>
-                                <p className="text-2xl font-bold text-white">
+                                <p className="text-sm text-[#6B7280]">Total</p>
+                                <p className="text-2xl font-bold text-[#1F2937]">
                                   {period === 'weekly'
                                     ? `${balance.totalPointsWeekly.toFixed(0)} pts/sem`
                                     : `${balance.totalPointsMonthly.toFixed(0)} pts/mois`}
@@ -324,9 +323,9 @@ export default function BalancePage() {
 
                         {/* Progress Bar */}
                         <div className="mt-4">
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                             <div
-                              className="h-full bg-gradient-to-r from-teal-500 to-purple-500 transition-all"
+                              className="h-full bg-gradient-to-r from-[#93C572] to-[#8B5CF6] transition-all"
                               style={{
                                 width: `${Math.min(((period === 'weekly' ? balance.totalPointsWeekly : balance.totalPointsMonthly) / (average * 2)) * 100, 100)}%`,
                               }}
@@ -345,8 +344,8 @@ export default function BalancePage() {
               <>
                 {/* Comparison Chart */}
                 {differences.length > 1 && (
-                  <div className="mb-8 rounded-lg border border-white/10 bg-white/5 p-6">
-                    <h2 className="mb-4 text-xl font-semibold text-white">Graphique de comparaison</h2>
+                  <div className="mb-8 rounded-lg border border-[#E5E7EB] bg-white p-6">
+                    <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">Graphique de comparaison</h2>
                     <div className="space-y-3">
                       {differences
                         .sort((a, b) => (period === 'weekly' ? b.totalPointsWeekly - a.totalPointsWeekly : b.totalPointsMonthly - a.totalPointsMonthly))
@@ -358,14 +357,14 @@ export default function BalancePage() {
                           return (
                             <div key={balance.participant.id}>
                               <div className="mb-1 flex items-center justify-between text-sm">
-                                <span className="text-slate-300">{balance.participant.name}</span>
-                                <span className="text-slate-400">
+                                <span className="text-[#6B7280]">{balance.participant.name}</span>
+                                <span className="text-[#6B7280]">
                                   {currentPoints.toFixed(0)} pts{period === 'weekly' ? '/sem' : '/mois'}
                                 </span>
                               </div>
-                              <div className="h-4 w-full overflow-hidden rounded-full bg-white/10">
+                              <div className="h-4 w-full overflow-hidden rounded-full bg-gray-100">
                                 <div
-                                  className="h-full bg-gradient-to-r from-teal-500 to-purple-500 transition-all"
+                                  className="h-full bg-gradient-to-r from-[#93C572] to-[#8B5CF6] transition-all"
                                   style={{ width: `${percentage}%` }}
                                 />
                               </div>
@@ -377,8 +376,8 @@ export default function BalancePage() {
                 )}
 
                 {/* Differences between members */}
-                <div className="rounded-lg border border-white/10 bg-white/5 p-6">
-                  <h2 className="mb-4 text-xl font-semibold text-white">Écarts entre membres</h2>
+                <div className="rounded-lg border border-[#E5E7EB] bg-white p-6">
+                  <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">Écarts entre membres</h2>
                   <div className="space-y-4">
                     {differences.map((balanceA) => {
                       const pointsA = period === 'weekly' ? balanceA.totalPointsWeekly : balanceA.totalPointsMonthly
@@ -400,11 +399,11 @@ export default function BalancePage() {
                       if (comparisons.length === 0) return null
 
                       return (
-                        <div key={balanceA.participant.id} className="rounded-lg border border-white/10 bg-white/5 p-4">
-                          <p className="text-lg font-semibold text-white mb-2">
+                        <div key={balanceA.participant.id} className="rounded-lg border border-[#E5E7EB] bg-white p-4">
+                          <p className="text-lg font-semibold text-[#1F2937] mb-2">
                             {balanceA.participant.name}
                           </p>
-                          <p className="text-sm text-slate-300">
+                          <p className="text-sm text-[#6B7280]">
                             {comparisons.map((comp, idx) => (
                               <span key={idx}>
                                 {comp.isEqual ? (

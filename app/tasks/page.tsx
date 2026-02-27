@@ -9,7 +9,7 @@ import { getAssignments, createAssignment, updateAssignment, deleteAssignment, d
 import { getParticipants, type Participant } from '@/lib/supabase/participants'
 import { translateTaskName, translateCategory } from '@/lib/translations'
 
-type TaskCategory = 'cleaning' | 'cooking' | 'childcare' | 'laundry' | 'shopping' | 'car_maintenance' | 'diy' | 'administrative' | 'other'
+type TaskCategory = 'administrative' | 'car_maintenance' | 'parenting' | 'cleaning' | 'cooking' | 'diy' | 'laundry' | 'other' | 'shopping'
 
 export default function TasksPage() {
   const router = useRouter()
@@ -319,20 +319,25 @@ export default function TasksPage() {
       return tasks
     }
 
-    // Get all tasks with their most recent assignment date
-    const tasksWithDates = tasks.map(task => {
+    // Separate tasks with and without assignments
+    const tasksWithAssignments: Array<{ task: TaskWithTemplate; date: Date }> = []
+    const tasksWithoutAssignments: TaskWithTemplate[] = []
+
+    tasks.forEach(task => {
       const taskAssignments = getAssignmentsForTask(task.id)
       if (taskAssignments.length === 0) {
-        return { task, date: new Date(0) } // No assignment, put at the end
+        // No assignment, will be put at the end
+        tasksWithoutAssignments.push(task)
+      } else {
+        // Get the most recent assignment date
+        const dates = taskAssignments.map(a => new Date(a.created_at))
+        const mostRecentDate = new Date(Math.max(...dates.map(d => d.getTime())))
+        tasksWithAssignments.push({ task, date: mostRecentDate })
       }
-      // Get the most recent assignment date
-      const dates = taskAssignments.map(a => new Date(a.created_at))
-      const mostRecentDate = new Date(Math.max(...dates.map(d => d.getTime())))
-      return { task, date: mostRecentDate }
     })
 
-    // Sort by date
-    tasksWithDates.sort((a, b) => {
+    // Sort only tasks with assignments by date
+    tasksWithAssignments.sort((a, b) => {
       if (sortOrder === 'newest') {
         return b.date.getTime() - a.date.getTime() // Newest first
       } else {
@@ -340,7 +345,11 @@ export default function TasksPage() {
       }
     })
 
-    return tasksWithDates.map(t => t.task)
+    // Return sorted tasks with assignments first, then tasks without assignments at the end
+    return [
+      ...tasksWithAssignments.map(t => t.task),
+      ...tasksWithoutAssignments
+    ]
   }
 
   const sortedTasks = getSortedTasks()
@@ -394,8 +403,8 @@ export default function TasksPage() {
 
   if (householdLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
-        <p className="text-slate-400">Chargement...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
+        <p className="text-[#6B7280]">Chargement...</p>
       </div>
     )
   }
@@ -406,17 +415,20 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-8">
+    <div className="min-h-screen bg-[#FAFAF8] px-6 py-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Tâches du foyer "{currentHousehold.name}"</h1>
-          <p className="mt-2 text-slate-400">
+          <h1 className="text-3xl font-bold text-[#1F2937]">
+            Tâches du foyer<br />
+            &quot;{currentHousehold.name}&quot;
+          </h1>
+          <p className="mt-2 text-[#6B7280]">
             Gérez les tâches ménagères et leurs assignations
           </p>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-3 text-sm text-red-400 mb-4">
+          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600 mb-4">
             {error}
           </div>
         )}
@@ -425,7 +437,7 @@ export default function TasksPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <button
             onClick={() => setShowAddTaskModal(true)}
-            className="rounded-lg bg-teal-500 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+            className="rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
           >
             + Ajouter une tâche
           </button>
@@ -437,7 +449,7 @@ export default function TasksPage() {
                 e.stopPropagation()
                 setShowActionsMenu(!showActionsMenu)
               }}
-              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-lg text-white transition-colors hover:bg-white/10"
+              className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-2 text-lg text-[#1F2937] transition-colors hover:bg-gray-100"
               aria-label="Menu actions"
             >
               ···
@@ -453,14 +465,14 @@ export default function TasksPage() {
                 />
                 
                 {/* Menu */}
-                <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-lg border border-white/10 bg-slate-900/95 backdrop-blur-sm shadow-lg">
+                <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm shadow-lg">
                   <div className="py-2">
                     <button
                       onClick={() => {
                         setSortOrder(sortOrder === 'none' ? 'oldest' : 'none')
                         setShowActionsMenu(false)
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition-colors"
+                      className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
                     >
                       {sortOrder === 'none' ? 'Trier par date d\'assignation' : 'Ne plus trier'}
                     </button>
@@ -470,7 +482,7 @@ export default function TasksPage() {
                         setShowActionsMenu(false)
                       }}
                       disabled={loading || assignments.length === 0}
-                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Supprimer les assignations
                     </button>
@@ -483,21 +495,21 @@ export default function TasksPage() {
 
         {/* Sort Indicator */}
         {sortOrder !== 'none' && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-[#E5E7EB] bg-white px-4 py-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-300">
+              <span className="text-sm text-[#6B7280]">
                 {sortOrder === 'oldest' ? 'Du plus ancien au plus récent' : 'Du plus récent au plus ancien'}
               </span>
               <button
                 onClick={handleToggleSortOrder}
-                className="text-sm text-teal-400 hover:text-teal-300 transition-colors underline"
+                className="text-sm text-[#8B5CF6] hover:text-[#7c3aed] transition-colors underline"
               >
                 {sortOrder === 'oldest' ? 'Voir les plus récentes' : 'Voir les plus anciennes'}
               </button>
             </div>
             <button
               onClick={() => setSortOrder('none')}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-[#6B7280] hover:text-[#1F2937] transition-colors"
               aria-label="Fermer le tri"
             >
               ✕
@@ -508,14 +520,14 @@ export default function TasksPage() {
         {/* Tasks List by Category or Sorted */}
         {sortOrder === 'none' ? (
           Object.keys(tasksByCategory).length === 0 ? (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
-              <p className="text-slate-400">Aucune tâche dans ce foyer. Ajoutez-en une !</p>
+            <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
+              <p className="text-[#6B7280]">Aucune tâche dans ce foyer. Ajoutez-en une !</p>
             </div>
           ) : (
             <div className="space-y-8">
               {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
-                <div key={category} className="rounded-lg border border-white/10 bg-white/5 p-6">
-                  <h2 className="mb-4 text-xl font-semibold text-white">
+                <div key={category} className="rounded-lg border border-[#E5E7EB] bg-white p-6">
+                  <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">
                     {translateCategory(category)}
                   </h2>
                   <div className="space-y-4">
@@ -525,14 +537,14 @@ export default function TasksPage() {
                       return (
                         <div
                           key={task.id}
-                          className="rounded-lg border border-white/10 bg-white/5 p-6"
+                          className="rounded-lg border border-[#E5E7EB] bg-white p-6"
                         >
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-white mb-3">
+                              <h3 className="text-lg font-semibold text-[#1F2937] mb-3">
                                 {translateTaskName(task.task_templates.name)}
                               </h3>
-                              <div className="flex flex-col gap-1 text-sm text-slate-400">
+                              <div className="flex flex-col gap-1 text-sm text-[#6B7280]">
                                 <span>Réalisation : {points.performer} pts</span>
                                 <span>Charge mentale : {points.mentalLoad} pts</span>
                               </div>
@@ -544,7 +556,7 @@ export default function TasksPage() {
                                   e.stopPropagation()
                                   setTaskContextMenu(taskContextMenu === task.id ? null : task.id)
                                 }}
-                                className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-lg text-white transition-colors hover:bg-white/10"
+                                className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-2 text-lg text-[#1F2937] transition-colors hover:bg-gray-100"
                                 aria-label="Menu"
                               >
                                 ···
@@ -560,14 +572,14 @@ export default function TasksPage() {
                                   />
                                   
                                   {/* Menu */}
-                                  <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-lg border border-white/10 bg-slate-900/95 backdrop-blur-sm shadow-lg">
+                                  <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm shadow-lg">
                                     <div className="py-2">
                                       <button
                                         onClick={() => {
                                           openEditPointsModal(task)
                                           setTaskContextMenu(null)
                                         }}
-                                        className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition-colors"
+                                        className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
                                       >
                                         Modifier les points
                                       </button>
@@ -576,7 +588,7 @@ export default function TasksPage() {
                                           openAssignModal(task)
                                           setTaskContextMenu(null)
                                         }}
-                                        className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition-colors"
+                                        className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
                                       >
                                         Assigner à un membre
                                       </button>
@@ -585,7 +597,7 @@ export default function TasksPage() {
                                           handleDeleteTask(task.id)
                                           setTaskContextMenu(null)
                                         }}
-                                        className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-100 transition-colors"
                                       >
                                         Supprimer
                                       </button>
@@ -599,31 +611,31 @@ export default function TasksPage() {
                           {/* Assignments List - Full Width */}
                           {taskAssignments.length > 0 && (
                             <div className="mt-8 space-y-5">
-                              <p className="text-sm font-medium text-slate-300 mb-5">Assignations :</p>
+                              <p className="text-sm font-medium text-[#6B7280] mb-5">Assignations :</p>
                               {taskAssignments.map((assignment) => (
                                 <div
                                   key={assignment.id}
-                                  className="rounded border border-white/10 bg-white/5 p-6 w-full"
+                                  className="rounded border border-[#E5E7EB] bg-white p-6 w-full"
                                 >
-                                  <div className="flex items-center justify-between mb-6">
-                                    <span className="text-sm text-slate-400">
+                                  <div className="flex items-center justify-between gap-[5px] mb-6">
+                                    <span className="text-sm text-[#6B7280]">
                                       {assignment.frequency_per_week === null
                                         ? 'Ponctuelle'
                                         : assignment.frequency_per_week > 1
                                         ? `${assignment.frequency_per_week}x/semaine`
                                         : '1x/semaine'}
                                     </span>
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-[5px]">
                                       <button
                                         onClick={() => openAssignModal(task, assignment)}
-                                        className="rounded border border-white/20 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/10"
+                                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-1.5 text-xs font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                                         aria-label="Modifier l'assignation"
                                       >
                                         Modifier
                                       </button>
                                       <button
                                         onClick={() => handleDeleteAssignment(assignment.id)}
-                                        className="rounded border border-red-500/50 bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
                                         aria-label="Supprimer l'assignation"
                                       >
                                         Supprimer
@@ -631,13 +643,13 @@ export default function TasksPage() {
                                     </div>
                                   </div>
                                   <div className="space-y-4 text-sm">
-                                    <p className="text-slate-300">
+                                    <p className="text-[#6B7280]">
                                       Fait par : {assignment.performers?.name || 'Non assigné'}
                                     </p>
-                                    <p className="text-slate-300">
+                                    <p className="text-[#6B7280]">
                                       Pensé par : {assignment.thinkers?.name || 'Non assigné'}
                                     </p>
-                                    <p className="text-xs text-slate-400">
+                                    <p className="text-xs text-[#6B7280]">
                                       Assigné le {formatDate(assignment.created_at)}
                                     </p>
                                   </div>
@@ -656,8 +668,8 @@ export default function TasksPage() {
         ) : (
           // Sorted tasks (no categories)
           sortedTasks.length === 0 ? (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
-              <p className="text-slate-400">Aucune tâche dans ce foyer. Ajoutez-en une !</p>
+            <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
+              <p className="text-[#6B7280]">Aucune tâche dans ce foyer. Ajoutez-en une !</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -667,14 +679,14 @@ export default function TasksPage() {
                     return (
                       <div
                         key={task.id}
-                        className="rounded-lg border border-white/10 bg-white/5 p-6"
+                        className="rounded-lg border border-[#E5E7EB] bg-white p-6"
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-white mb-3">
+                            <h3 className="text-lg font-semibold text-[#1F2937] mb-3">
                               {translateTaskName(task.task_templates.name)}
                             </h3>
-                            <div className="flex flex-col gap-1 text-sm text-slate-400">
+                            <div className="flex flex-col gap-1 text-sm text-[#6B7280]">
                               <span>Réalisation : {points.performer} pts</span>
                               <span>Charge mentale : {points.mentalLoad} pts</span>
                             </div>
@@ -686,7 +698,7 @@ export default function TasksPage() {
                                 e.stopPropagation()
                                 setTaskContextMenu(taskContextMenu === task.id ? null : task.id)
                               }}
-                              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-lg text-white transition-colors hover:bg-white/10"
+                              className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-2 text-lg text-[#1F2937] transition-colors hover:bg-gray-100"
                               aria-label="Menu"
                             >
                               ···
@@ -702,14 +714,14 @@ export default function TasksPage() {
                                 />
                                 
                                 {/* Menu */}
-                                <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-lg border border-white/10 bg-slate-900/95 backdrop-blur-sm shadow-lg">
+                                <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm shadow-lg">
                                   <div className="py-2">
                                     <button
                                       onClick={() => {
                                         openEditPointsModal(task)
                                         setTaskContextMenu(null)
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition-colors"
+                                      className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
                                     >
                                       Modifier les points
                                     </button>
@@ -718,7 +730,7 @@ export default function TasksPage() {
                                         openAssignModal(task)
                                         setTaskContextMenu(null)
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10 transition-colors"
+                                      className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
                                     >
                                       Assigner à un membre
                                     </button>
@@ -727,7 +739,7 @@ export default function TasksPage() {
                                         handleDeleteTask(task.id)
                                         setTaskContextMenu(null)
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-100 transition-colors"
                                     >
                                       Supprimer
                                     </button>
@@ -741,31 +753,31 @@ export default function TasksPage() {
                         {/* Assignments List - Full Width */}
                         {taskAssignments.length > 0 && (
                           <div className="mt-8 space-y-5">
-                            <p className="text-sm font-medium text-slate-300 mb-5">Assignations :</p>
+                            <p className="text-sm font-medium text-[#6B7280] mb-5">Assignations :</p>
                             {taskAssignments.map((assignment) => (
                               <div
                                 key={assignment.id}
-                                className="rounded border border-white/10 bg-white/5 p-6 w-full"
+                                className="rounded border border-[#E5E7EB] bg-white p-6 w-full"
                               >
-                                <div className="flex items-center justify-between mb-6">
-                                  <span className="text-sm text-slate-400">
+                                <div className="flex items-center justify-between gap-[5px] mb-6">
+                                  <span className="text-sm text-[#6B7280]">
                                     {assignment.frequency_per_week === null
                                       ? 'Ponctuelle'
                                       : assignment.frequency_per_week > 1
                                       ? `${assignment.frequency_per_week}x/semaine`
                                       : '1x/semaine'}
                                   </span>
-                                  <div className="flex gap-3">
+                                  <div className="flex gap-[5px]">
                                     <button
                                       onClick={() => openAssignModal(task, assignment)}
-                                      className="rounded border border-white/20 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/10"
+                                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-1.5 text-xs font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                                       aria-label="Modifier l'assignation"
                                     >
                                       Modifier
                                     </button>
                                     <button
                                       onClick={() => handleDeleteAssignment(assignment.id)}
-                                      className="rounded border border-red-500/50 bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
                                       aria-label="Supprimer l'assignation"
                                     >
                                       Supprimer
@@ -773,13 +785,13 @@ export default function TasksPage() {
                                   </div>
                                 </div>
                                 <div className="space-y-4 text-sm">
-                                  <p className="text-slate-300">
+                                  <p className="text-[#6B7280]">
                                     Fait par : {assignment.performers?.name || 'Non assigné'}
                                   </p>
-                                  <p className="text-slate-300">
+                                  <p className="text-[#6B7280]">
                                     Pensé par : {assignment.thinkers?.name || 'Non assigné'}
                                   </p>
-                                  <p className="text-xs text-slate-400">
+                                  <p className="text-xs text-[#6B7280]">
                                     Assigné le {formatDate(assignment.created_at)}
                                   </p>
                                 </div>
@@ -797,12 +809,12 @@ export default function TasksPage() {
         {/* Add Task Modal */}
         {showAddTaskModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-lg border border-white/10 bg-white/5 p-8">
-              <h2 className="mb-6 text-2xl font-bold text-white">Ajouter une tâche</h2>
+            <div className="w-full max-w-2xl rounded-lg border border-[#E5E7EB] bg-white p-8">
+              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">Ajouter une tâche</h2>
               
               {/* Category Selection */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[#6B7280] mb-2">
                   Catégorie
                 </label>
                 <select
@@ -811,28 +823,28 @@ export default function TasksPage() {
                     setSelectedCategory(e.target.value as TaskCategory | '')
                     setSelectedTemplate(null)
                   }}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                 >
                   <option value="">Toutes les catégories</option>
+                  <option value="administrative">Administratif</option>
+                  <option value="car_maintenance">Entretien automobile</option>
+                  <option value="parenting">Parentalité</option>
                   <option value="cleaning">Nettoyage</option>
                   <option value="cooking">Cuisine</option>
-                  <option value="childcare">Garde d'enfants</option>
-                  <option value="laundry">Lessive</option>
-                  <option value="shopping">Courses</option>
-                  <option value="car_maintenance">Entretien automobile</option>
                   <option value="diy">Bricolage</option>
-                  <option value="administrative">Administratif</option>
+                  <option value="laundry">Lessive</option>
                   <option value="other">Autre</option>
-                </select>
+                  <option value="shopping">Courses</option>
+</select>
               </div>
 
               {/* Template Selection */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[#6B7280] mb-2">
                   Tâche {selectedCategory && `(${translateCategory(selectedCategory)})`}
                 </label>
                 {filteredTemplates.length === 0 ? (
-                  <div className="text-sm text-slate-400 py-2">
+                  <div className="text-sm text-[#6B7280] py-2">
                     <p>
                       {selectedCategory 
                         ? `Aucune tâche disponible dans la catégorie "${translateCategory(selectedCategory)}".`
@@ -870,7 +882,7 @@ export default function TasksPage() {
                         setSelectedTemplate(null)
                       }
                     }}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   >
                     <option value="">Sélectionnez une tâche</option>
                     {filteredTemplates.map((template) => (
@@ -890,14 +902,14 @@ export default function TasksPage() {
                     setSelectedCategory('')
                     setSelectedTemplate(null)
                   }}
-                  className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleAddTask}
                   disabled={!selectedTemplate || loading}
-                  className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                   title={!selectedTemplate ? 'Sélectionnez une tâche pour l\'ajouter' : ''}
                 >
                   {loading ? 'Ajout...' : 'Ajouter'}
@@ -910,20 +922,20 @@ export default function TasksPage() {
         {/* Edit Points Modal */}
         {showEditPointsModal && editingTask && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-white/5 p-8">
-              <h2 className="mb-6 text-2xl font-bold text-white">
+            <div className="w-full max-w-md rounded-lg border border-[#E5E7EB] bg-white p-8">
+              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">
                 Modifier les points - {translateTaskName(editingTask.task_templates.name)}
               </h2>
               
               <div className="mb-4">
-                <p className="mb-2 text-sm text-slate-400">
+                <p className="mb-2 text-sm text-[#6B7280]">
                   Points par défaut : {editingTask.task_templates.default_points} (performer), {editingTask.task_templates.default_mental_load_points} (mental load)
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
                     Points performer (0-100, par pas de 10)
                   </label>
                   <input
@@ -933,11 +945,11 @@ export default function TasksPage() {
                     step="10"
                     value={performerPoints}
                     onChange={(e) => setPerformerPoints(parseInt(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
                     Points charge mentale (0-100, par pas de 10)
                   </label>
                   <input
@@ -947,7 +959,7 @@ export default function TasksPage() {
                     step="10"
                     value={mentalLoadPoints}
                     onChange={(e) => setMentalLoadPoints(parseInt(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   />
                 </div>
               </div>
@@ -959,13 +971,13 @@ export default function TasksPage() {
                     setShowEditPointsModal(false)
                     setEditingTask(null)
                   }}
-                  className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleUpdatePoints}
-                  className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600"
+                  className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c]"
                 >
                   Sauvegarder
                 </button>
@@ -977,21 +989,21 @@ export default function TasksPage() {
         {/* Assign Task Modal */}
         {showAssignModal && assigningTask && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-white/5 p-8">
-              <h2 className="mb-6 text-2xl font-bold text-white">
+            <div className="w-full max-w-md rounded-lg border border-[#E5E7EB] bg-white p-8">
+              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">
                 {editingAssignment ? 'Modifier l\'assignation' : 'Assigner'} - {translateTaskName(assigningTask.task_templates.name)}
               </h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Qui fait la tâche ? (performer) <span className="text-red-400">*</span>
+                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
+                    Qui fait la tâche ? (performer) <span className="text-red-600">*</span>
                   </label>
                   <select
                     value={selectedPerformer}
                     onChange={(e) => setSelectedPerformer(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   >
                     <option value="">Sélectionnez un membre</option>
                     {participants.map((p) => (
@@ -1002,14 +1014,14 @@ export default function TasksPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Qui pense à la tâche ? (charge mentale) <span className="text-red-400">*</span>
+                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
+                    Qui pense à la tâche ? (charge mentale) <span className="text-red-600">*</span>
                   </label>
                   <select
                     value={selectedThinker}
                     onChange={(e) => setSelectedThinker(e.target.value)}
                     required
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   >
                     <option value="">Sélectionnez un membre</option>
                     {participants.map((p) => (
@@ -1020,7 +1032,7 @@ export default function TasksPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-3">
+                  <label className="block text-sm font-medium text-[#6B7280] mb-3">
                     Fréquence
                   </label>
                   <div className="space-y-3">
@@ -1034,9 +1046,9 @@ export default function TasksPage() {
                           setIsFrequentTask(false)
                           setFrequencyPerWeek(1)
                         }}
-                        className="h-4 w-4 text-teal-500 focus:ring-teal-500"
+                        className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
                       />
-                      <label htmlFor="oneTime" className="text-sm text-slate-300 cursor-pointer">
+                      <label htmlFor="oneTime" className="text-sm text-[#6B7280] cursor-pointer">
                         Tâche ponctuelle (1 fois)
                       </label>
                     </div>
@@ -1047,15 +1059,15 @@ export default function TasksPage() {
                         name="frequency"
                         checked={isFrequentTask}
                         onChange={() => setIsFrequentTask(true)}
-                        className="h-4 w-4 text-teal-500 focus:ring-teal-500"
+                        className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
                       />
-                      <label htmlFor="frequentTask" className="text-sm text-slate-300 cursor-pointer">
+                      <label htmlFor="frequentTask" className="text-sm text-[#6B7280] cursor-pointer">
                         Tâche fréquente
                       </label>
                     </div>
                     {isFrequentTask && (
                       <div className="ml-7">
-                        <label className="block text-xs text-slate-400 mb-1">
+                        <label className="block text-xs text-[#6B7280] mb-1">
                           Fréquence par semaine
                         </label>
                         <input
@@ -1064,7 +1076,7 @@ export default function TasksPage() {
                           max="14"
                           value={frequencyPerWeek}
                           onChange={(e) => setFrequencyPerWeek(parseInt(e.target.value) || 1)}
-                          className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                          className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                         />
                       </div>
                     )}
@@ -1079,14 +1091,14 @@ export default function TasksPage() {
                     setShowAssignModal(false)
                     setAssigningTask(null)
                   }}
-                  className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={editingAssignment ? handleUpdateAssignment : handleCreateAssignment}
                   disabled={!selectedPerformer || !selectedThinker || loading}
-                  className="rounded-lg bg-teal-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Enregistrement...' : editingAssignment ? 'Modifier' : 'Assigner'}
                 </button>
@@ -1098,12 +1110,12 @@ export default function TasksPage() {
         {/* Delete Assignments Confirmation Modal */}
         {showDeleteAssignmentsModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg border border-white/10 bg-slate-900/95 backdrop-blur-sm p-8">
-              <h2 className="mb-6 text-2xl font-bold text-white">
+            <div className="w-full max-w-md rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm p-8">
+              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">
                 Confirmation de suppression
               </h2>
               
-              <p className="mb-6 text-slate-300">
+              <p className="mb-6 text-[#6B7280]">
                 Êtes-vous sûr de vouloir supprimer toutes les assignations ? Cette action ne peut pas être annulée.
               </p>
 
@@ -1111,7 +1123,7 @@ export default function TasksPage() {
                 <button
                   type="button"
                   onClick={() => setShowDeleteAssignmentsModal(false)}
-                  className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                 >
                   Annuler
                 </button>

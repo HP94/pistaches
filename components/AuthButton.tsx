@@ -38,7 +38,7 @@ export default function AuthButton() {
 
   if (loading) {
     return (
-      <div className="text-sm text-slate-400">
+      <div className="text-sm text-[#6B7280]">
         Chargement...
       </div>
     )
@@ -48,7 +48,7 @@ export default function AuthButton() {
     return (
       <Link
         href="/login"
-        className="rounded-lg border border-teal-500/50 bg-teal-500/10 px-4 py-2 text-sm font-medium text-teal-400 transition-colors hover:bg-teal-500/20"
+        className="rounded-lg border border-[#93C572] bg-[#93C572]/10 px-4 py-2 text-sm font-medium text-[#7bad5c] transition-colors hover:bg-[#93C572]/20"
       >
         Connexion
       </Link>
@@ -57,12 +57,12 @@ export default function AuthButton() {
 
   return (
     <div className="flex items-center gap-4">
-      <span className="text-sm text-slate-400">
+      <span className="text-sm text-[#6B7280]">
         {user.email}
       </span>
       <button
         onClick={handleSignOut}
-        className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+        className="rounded-lg border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-50"
       >
         Déconnexion
       </button>

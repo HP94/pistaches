@@ -12,7 +12,7 @@ export interface TaskTemplate {
 export type TaskCategory =
   | 'cleaning'
   | 'cooking'
-  | 'childcare'
+  | 'parenting'
   | 'laundry'
   | 'shopping'
   | 'car_maintenance'

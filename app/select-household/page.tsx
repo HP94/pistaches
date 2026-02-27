@@ -84,17 +84,18 @@ export default function SelectHouseholdPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-zinc-900 px-6 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
       <div className="w-full max-w-2xl space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white">Equal Housing</h1>
-          <p className="mt-2 text-slate-400">
+          <img src="/pistaches-logo.svg" alt="Pistâches" className="mx-auto h-14 w-14" />
+          <h1 className="mt-3 text-4xl font-bold text-[#1F2937]">Pistâches</h1>
+          <p className="mt-2 text-[#6B7280]">
             Créez ou rejoignez un foyer pour commencer
           </p>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/50 p-4 text-red-400 text-center">
+          <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-600 text-center">
             {error}
           </div>
         )}
@@ -102,28 +103,28 @@ export default function SelectHouseholdPage() {
         {!showJoinForm && !showCreateForm && (
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Join Household Card */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
-              <h2 className="text-2xl font-semibold text-white mb-4">Rejoindre un foyer</h2>
-              <p className="text-slate-400 mb-6">
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
+              <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">Rejoindre un foyer</h2>
+              <p className="text-[#6B7280] mb-6">
                 Vous avez reçu un code d'invitation ? Rejoignez un foyer existant.
               </p>
               <button
                 onClick={() => setShowJoinForm(true)}
-                className="w-full rounded-lg bg-teal-500 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+                className="w-full rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
               >
                 Rejoindre avec un code
               </button>
             </div>
 
             {/* Create Household Card */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
-              <h2 className="text-2xl font-semibold text-white mb-4">Créer un foyer</h2>
-              <p className="text-slate-400 mb-6">
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
+              <h2 className="text-2xl font-semibold text-[#1F2937] mb-4">Créer un foyer</h2>
+              <p className="text-[#6B7280] mb-6">
                 Créez un nouveau foyer et invitez d'autres personnes à vous rejoindre.
               </p>
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="w-full rounded-lg border border-teal-500/50 bg-teal-500/10 px-6 py-3 font-medium text-teal-400 transition-colors hover:bg-teal-500/20"
+                className="w-full rounded-lg border border-[#93C572] bg-[#93C572]/10 px-6 py-3 font-medium text-[#7bad5c] transition-colors hover:bg-[#93C572]/20"
               >
                 Créer un foyer
               </button>
@@ -132,11 +133,11 @@ export default function SelectHouseholdPage() {
         )}
 
         {showJoinForm && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
-            <h2 className="text-2xl font-semibold text-white mb-6">Rejoindre un foyer</h2>
+          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-6">Rejoindre un foyer</h2>
             <form onSubmit={handleJoinHousehold} className="space-y-4">
               <div>
-                <label htmlFor="joinCode" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="joinCode" className="block text-sm font-medium text-[#6B7280] mb-2">
                   Code d'invitation
                 </label>
                 <input
@@ -146,7 +147,7 @@ export default function SelectHouseholdPage() {
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   required
                   maxLength={6}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono uppercase text-center text-2xl tracking-wider"
+                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-mono uppercase text-center text-2xl tracking-wider"
                   placeholder="ABC123"
                 />
               </div>
@@ -154,7 +155,7 @@ export default function SelectHouseholdPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 rounded-lg bg-teal-500 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-lg bg-[#93C572] px-4 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Rejoindre...' : 'Rejoindre'}
                 </button>
@@ -165,7 +166,7 @@ export default function SelectHouseholdPage() {
                     setJoinCode('')
                     setError(null)
                   }}
-                  className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-white transition-colors hover:bg-white/10"
+                  className="flex-1 rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                 >
                   Retour
                 </button>
@@ -175,11 +176,11 @@ export default function SelectHouseholdPage() {
         )}
 
         {showCreateForm && (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
-            <h2 className="text-2xl font-semibold text-white mb-6">Créer un foyer</h2>
+          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
+            <h2 className="text-2xl font-semibold text-[#1F2937] mb-6">Créer un foyer</h2>
             <form onSubmit={handleCreateHousehold} className="space-y-4">
               <div>
-                <label htmlFor="householdName" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="householdName" className="block text-sm font-medium text-[#6B7280] mb-2">
                   Nom du foyer
                 </label>
                 <input
@@ -187,7 +188,7 @@ export default function SelectHouseholdPage() {
                   type="text"
                   value={createHouseholdName}
                   onChange={(e) => setCreateHouseholdName(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   placeholder="Mon foyer"
                 />
               </div>
@@ -195,7 +196,7 @@ export default function SelectHouseholdPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 rounded-lg bg-teal-500 px-4 py-3 font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-lg bg-[#93C572] px-4 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Création...' : 'Créer le foyer'}
                 </button>
@@ -206,7 +207,7 @@ export default function SelectHouseholdPage() {
                     setCreateHouseholdName('')
                     setError(null)
                   }}
-                  className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-white transition-colors hover:bg-white/10"
+                  className="flex-1 rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
                 >
                   Retour
                 </button>
