@@ -23,30 +23,48 @@ export default function Home() {
   }
 
   useEffect(() => {
+    let cancelled = false
+
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
+      try {
+        // getSession() is faster than getUser() (no extra Auth API round-trip)
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        const user = session?.user ?? null
+
+        if (!user) {
+          router.replace('/login')
+          return
+        }
+
+        if (cancelled) return
+        setUserId(user.id)
+
+        const { data: households, error } = await getUserHouseholds(user.id)
+
+        if (cancelled) return
+
+        if (error || !households || households.length === 0) {
+          router.replace('/select-household')
+          return
+        }
+
+        setCurrentHousehold(households[0])
+      } catch (e) {
+        console.error('Home init error:', e)
+        router.replace('/login')
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
-      
-      setUserId(user.id)
-      
-      // Check if user has any households
-      const { data: households, error } = await getUserHouseholds(user.id)
-      
-      if (error || !households || households.length === 0) {
-        // No household, redirect to selection page
-        router.push('/select-household')
-        return
-      }
-      
-      // Set current household (first one for now)
-      setCurrentHousehold(households[0])
-      setLoading(false)
     }
-    
-    init()
+
+    void init()
+    return () => {
+      cancelled = true
+    }
   }, [router])
 
   const handleHouseholdChange = (household: Household) => {
