@@ -26,10 +26,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Use getUser() which forces a refresh from the server
+  // Use getSession() — reads from cookies without an extra Auth API round-trip.
+  // getUser() validates with Supabase on every request and often causes
+  // MIDDLEWARE_INVOCATION_TIMEOUT on Vercel Edge.
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   // Protected routes that require authentication
   const protectedRoutes = ['/participants', '/tasks', '/balance']
@@ -57,15 +60,16 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Only these routes need auth redirects — avoids running middleware (and Supabase)
+  // on every page, which caused MIDDLEWARE_INVOCATION_TIMEOUT on Vercel Edge.
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/participants/:path*',
+    '/tasks/:path*',
+    '/balance/:path*',
+    '/login',
+    '/signup',
+    '/reset-password',
+    '/update-password',
   ],
 }
 
