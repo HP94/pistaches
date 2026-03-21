@@ -3,6 +3,7 @@ import { Nunito, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import ProfileMenu from "@/components/ProfileMenu";
+import AuthRecovery from "@/components/AuthRecovery";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -42,6 +43,7 @@ export default function RootLayout({
         className={`${nunito.variable} ${geistMono.variable} antialiased bg-[#FAFAF8] text-[#1F2937] min-h-screen flex flex-col font-sans`}
         suppressHydrationWarning
       >
+        <AuthRecovery />
         <div className="flex-1 pb-[100px] sm:pb-0">
           {children}
         </div>

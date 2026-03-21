@@ -37,10 +37,20 @@ export async function signInWithGoogle() {
 }
 
 /**
- * Sign out the current user
+ * Sign out the current user (local + server session)
  */
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
+  return { error }
+}
+
+/**
+ * Clear only local auth storage (no network). Use when refresh token is invalid
+ * or session is corrupt, to stop infinite refresh loops without relying on user
+ * clearing site data manually.
+ */
+export async function signOutLocal() {
+  const { error } = await supabase.auth.signOut({ scope: 'local' })
   return { error }
 }
 

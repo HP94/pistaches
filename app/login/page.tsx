@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { signIn, signInWithGoogle } from '@/lib/supabase/auth'
+import { signIn, signInWithGoogle, signOutLocal } from '@/lib/supabase/auth'
 import { supabase } from '@/lib/supabase/client'
 
 function LoginForm() {
@@ -17,13 +17,23 @@ function LoginForm() {
   // Check if user is already logged in
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        const redirectTo = searchParams?.get('redirect') || '/'
-        router.push(redirectTo)
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.warn('[login] getSession error, clearing local session', error)
+          await signOutLocal()
+          return
+        }
+        if (session) {
+          const redirectTo = searchParams?.get('redirect') || '/'
+          router.push(redirectTo)
+        }
+      } catch (e) {
+        console.warn('[login] getSession failed, clearing local session', e)
+        await signOutLocal()
       }
     }
-    checkSession()
+    void checkSession()
   }, [router, searchParams])
 
   // Get redirect URL from query params
