@@ -3,8 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { updatePassword } from '@/lib/supabase/auth'
+import { signOut, updatePassword } from '@/lib/supabase/auth'
 import { supabase } from '@/lib/supabase/client'
+import {
+  clearRecoveryPendingCookie,
+  setRecoveryPendingCookie,
+} from '@/lib/auth/recoveryCookie'
 
 export default function UpdatePasswordPage() {
   const router = useRouter()
@@ -37,6 +41,10 @@ export default function UpdatePasswordPage() {
             setIsValidToken(false)
             setError('Le lien de réinitialisation est invalide ou a expiré.')
           } else {
+            const linkType = hashParams.get('type')
+            if (linkType === 'recovery') {
+              setRecoveryPendingCookie()
+            }
             setIsValidToken(true)
             // Clear the hash from URL
             window.history.replaceState(null, '', window.location.pathname)
@@ -46,7 +54,7 @@ export default function UpdatePasswordPage() {
           setError('Le lien de réinitialisation est invalide.')
         }
       } else {
-        // Check if there's already a session
+        // PKCE ou session déjà établie (PASSWORD_RECOVERY + cookie gérés par PasswordRecoveryListener)
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
           setIsValidToken(true)
@@ -83,8 +91,10 @@ export default function UpdatePasswordPage() {
       setError(error.message)
       setLoading(false)
     } else {
+      clearRecoveryPendingCookie()
+      await signOut()
+      setLoading(false)
       setSuccess(true)
-      // Redirect to login after 2 seconds
       setTimeout(() => {
         router.push('/login')
       }, 2000)
@@ -131,7 +141,7 @@ export default function UpdatePasswordPage() {
             <div className="mb-4 text-4xl">✅</div>
             <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Mot de passe mis à jour !</h2>
             <p className="text-[#6B7280] mb-4">
-              Votre mot de passe a été modifié avec succès. Redirection vers la page de connexion...
+              Vous pouvez maintenant vous connecter avec votre nouveau mot de passe. Redirection vers la page de connexion...
             </p>
           </div>
         </div>

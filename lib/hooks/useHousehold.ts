@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { getUserHouseholds, type Household } from '@/lib/supabase/households'
+import { pickHouseholdFromList, setStoredHouseholdId } from '@/lib/currentHouseholdStorage'
 
 /**
  * Hook to check if user has a household and redirect if not
@@ -40,7 +41,8 @@ export function useHousehold(redirectIfNone: boolean = true) {
         }
 
         setHouseholds(data)
-        setCurrentHousehold(data[0]) // Use first household for now
+        const chosen = pickHouseholdFromList(data, user.id)
+        setCurrentHousehold(chosen)
         setLoading(false)
       } catch (err) {
         console.error('Error loading households:', err)
@@ -51,12 +53,20 @@ export function useHousehold(redirectIfNone: boolean = true) {
     init()
   }, [router, redirectIfNone])
 
+  const setCurrentHouseholdPersisted = useCallback(
+    (household: Household) => {
+      if (userId) setStoredHouseholdId(userId, household.id)
+      setCurrentHousehold(household)
+    },
+    [userId]
+  )
+
   return {
     currentHousehold,
     households,
     loading,
     userId,
-    setCurrentHousehold,
+    setCurrentHousehold: setCurrentHouseholdPersisted,
   }
 }
 

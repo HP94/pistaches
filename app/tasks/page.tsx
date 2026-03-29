@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHousehold } from '@/lib/hooks/useHousehold'
 import { getTasks, createTask, updateTaskPoints, deleteTask, type TaskWithTemplate } from '@/lib/supabase/tasks'
@@ -8,8 +8,27 @@ import { getTaskTemplates, type TaskTemplate } from '@/lib/supabase/taskTemplate
 import { getAssignments, createAssignment, updateAssignment, deleteAssignment, deleteAllAssignmentsForHousehold, type AssignmentWithDetails } from '@/lib/supabase/assignments'
 import { getParticipants, type Participant } from '@/lib/supabase/participants'
 import { translateTaskName, translateCategory } from '@/lib/translations'
+import { ContextActionsMenu } from '@/components/ContextActionsMenu'
+import { SuccessToast, useSuccessToast } from '@/components/SuccessToast'
 
 type TaskCategory = 'administrative' | 'car_maintenance' | 'parenting' | 'cleaning' | 'cooking' | 'diy' | 'laundry' | 'other' | 'shopping'
+
+const ALL_TASK_CATEGORIES: TaskCategory[] = [
+  'administrative',
+  'car_maintenance',
+  'cleaning',
+  'cooking',
+  'diy',
+  'laundry',
+  'other',
+  'parenting',
+  'shopping',
+]
+
+/** Ordre alphabétique des libellés FR (pour le select « Ajouter une tâche » ; « Toutes les catégories » reste séparé) */
+const TASK_CATEGORIES_ALPHABETICAL_FR = [...ALL_TASK_CATEGORIES].sort((a, b) =>
+  translateCategory(a).localeCompare(translateCategory(b), 'fr')
+)
 
 export default function TasksPage() {
   const router = useRouter()
@@ -41,10 +60,11 @@ export default function TasksPage() {
   const [isFrequentTask, setIsFrequentTask] = useState<boolean>(false)
   const [frequencyPerWeek, setFrequencyPerWeek] = useState<number>(1)
   const [editingAssignment, setEditingAssignment] = useState<AssignmentWithDetails | null>(null)
-  const [taskContextMenu, setTaskContextMenu] = useState<string | null>(null)
+  const [contextMenuKey, setContextMenuKey] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'none' | 'oldest' | 'newest'>('none')
   const [showActionsMenu, setShowActionsMenu] = useState(false)
   const [showDeleteAssignmentsModal, setShowDeleteAssignmentsModal] = useState(false)
+  const { toastMessage, showSuccessToast } = useSuccessToast()
 
   useEffect(() => {
     if (!householdLoading && !currentHousehold) {
@@ -54,10 +74,10 @@ export default function TasksPage() {
     }
   }, [currentHousehold, householdLoading, router])
 
-  const loadData = async () => {
+  const loadData = async (opts?: { silent?: boolean }) => {
     if (!currentHousehold) return
-    
-    setLoading(true)
+
+    if (!opts?.silent) setLoading(true)
     setError(null)
     try {
       // Load all data in parallel
@@ -96,7 +116,7 @@ export default function TasksPage() {
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement des données')
     } finally {
-      setLoading(false)
+      if (!opts?.silent) setLoading(false)
     }
   }
 
@@ -126,7 +146,8 @@ export default function TasksPage() {
       )
       if (error) throw error
 
-      await loadData()
+      await loadData({ silent: true })
+      showSuccessToast()
       setShowAddTaskModal(false)
       setSelectedTemplate(null)
       setSelectedCategory('')
@@ -150,7 +171,8 @@ export default function TasksPage() {
       )
       if (error) throw error
 
-      await loadData()
+      await loadData({ silent: true })
+      showSuccessToast()
       setShowEditPointsModal(false)
       setEditingTask(null)
       setPerformerPoints(0)
@@ -168,7 +190,8 @@ export default function TasksPage() {
       const { error } = await deleteTask(taskId)
       if (error) throw error
 
-      await loadData()
+      await loadData({ silent: true })
+      showSuccessToast()
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la suppression')
     }
@@ -190,7 +213,8 @@ export default function TasksPage() {
       )
       if (error) throw error
 
-      await loadData()
+      await loadData({ silent: true })
+      showSuccessToast()
       setShowAssignModal(false)
       setAssigningTask(null)
       setEditingAssignment(null)
@@ -221,7 +245,8 @@ export default function TasksPage() {
       )
       if (error) throw error
 
-      await loadData()
+      await loadData({ silent: true })
+      showSuccessToast()
       setShowAssignModal(false)
       setEditingAssignment(null)
       setAssigningTask(null)
@@ -244,7 +269,8 @@ export default function TasksPage() {
       const { error } = await deleteAssignment(assignmentId)
       if (error) throw error
 
-      await loadData()
+      await loadData({ silent: true })
+      showSuccessToast()
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la suppression')
     }
@@ -259,7 +285,8 @@ export default function TasksPage() {
       const { error } = await deleteAllAssignmentsForHousehold(currentHousehold.id)
       if (error) throw error
 
-      await loadData()
+      await loadData({ silent: true })
+      showSuccessToast()
       setShowDeleteAssignmentsModal(false)
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la remise à zéro des assignations')
@@ -362,16 +389,29 @@ export default function TasksPage() {
     }
   }
 
-  const tasksByCategory = sortOrder === 'none' 
-    ? tasks.reduce((acc, task) => {
-        const category = task.task_templates.category
-        if (!acc[category]) {
-          acc[category] = []
-        }
-        acc[category].push(task)
-        return acc
-      }, {} as Record<string, TaskWithTemplate[]>)
-    : {} // Empty when sorting is active
+  const sortedCategoryEntries = useMemo(() => {
+    if (sortOrder !== 'none') return [] as [string, TaskWithTemplate[]][]
+    const grouped = tasks.reduce((acc, task) => {
+      const category = task.task_templates.category
+      if (!acc[category]) acc[category] = []
+      acc[category].push(task)
+      return acc
+    }, {} as Record<string, TaskWithTemplate[]>)
+
+    return Object.entries(grouped)
+      .map(([category, categoryTasks]) => [
+        category,
+        [...categoryTasks].sort((a, b) =>
+          translateTaskName(a.task_templates.name).localeCompare(
+            translateTaskName(b.task_templates.name),
+            'fr'
+          )
+        ),
+      ] as [string, TaskWithTemplate[]])
+      .sort(([catA], [catB]) =>
+        translateCategory(catA).localeCompare(translateCategory(catB), 'fr')
+      )
+  }, [tasks, sortOrder])
 
   const filteredTemplates = selectedCategory
     ? templates.filter(t => t.category === selectedCategory)
@@ -395,6 +435,12 @@ export default function TasksPage() {
       }
     }
   }, [selectedCategory, templates, filteredTemplates])
+
+  const sortedFilteredTemplatesForAddModal = useMemo(() => {
+    return [...filteredTemplates].sort((a, b) =>
+      translateTaskName(a.name).localeCompare(translateTaskName(b.name), 'fr')
+    )
+  }, [filteredTemplates])
 
   // Debug: log when template is selected
   useEffect(() => {
@@ -519,13 +565,13 @@ export default function TasksPage() {
 
         {/* Tasks List by Category or Sorted */}
         {sortOrder === 'none' ? (
-          Object.keys(tasksByCategory).length === 0 ? (
+          sortedCategoryEntries.length === 0 ? (
             <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
               <p className="text-[#6B7280]">Aucune tâche dans ce foyer. Ajoutez-en une !</p>
             </div>
           ) : (
             <div className="space-y-8">
-              {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
+              {sortedCategoryEntries.map(([category, categoryTasks]) => (
                 <div key={category} className="rounded-lg border border-[#E5E7EB] bg-white p-6">
                   <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">
                     {translateCategory(category)}
@@ -549,62 +595,27 @@ export default function TasksPage() {
                                 <span>Charge mentale : {points.mentalLoad} pts</span>
                               </div>
                             </div>
-                            <div className="ml-4 relative">
-                              {/* Context Menu Button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setTaskContextMenu(taskContextMenu === task.id ? null : task.id)
-                                }}
-                                className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-2 text-lg text-[#1F2937] transition-colors hover:bg-gray-100"
-                                aria-label="Menu"
-                              >
-                                ···
-                              </button>
-
-                              {/* Context Menu Dropdown */}
-                              {taskContextMenu === task.id && (
-                                <>
-                                  {/* Backdrop */}
-                                  <div
-                                    className="fixed inset-0 z-40"
-                                    onClick={() => setTaskContextMenu(null)}
-                                  />
-                                  
-                                  {/* Menu */}
-                                  <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm shadow-lg">
-                                    <div className="py-2">
-                                      <button
-                                        onClick={() => {
-                                          openEditPointsModal(task)
-                                          setTaskContextMenu(null)
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
-                                      >
-                                        Modifier les points
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          openAssignModal(task)
-                                          setTaskContextMenu(null)
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
-                                      >
-                                        Assigner à un membre
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          handleDeleteTask(task.id)
-                                          setTaskContextMenu(null)
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-100 transition-colors"
-                                      >
-                                        Supprimer
-                                      </button>
-                                    </div>
-                                  </div>
-                                </>
-                              )}
+                            <div className="ml-4 shrink-0">
+                              <ContextActionsMenu
+                                menuKey={`task:${task.id}`}
+                                openMenuKey={contextMenuKey}
+                                onOpenMenuKeyChange={setContextMenuKey}
+                                items={[
+                                  {
+                                    label: 'Modifier les points',
+                                    onClick: () => openEditPointsModal(task),
+                                  },
+                                  {
+                                    label: 'Assigner à un membre',
+                                    onClick: () => openAssignModal(task),
+                                  },
+                                  {
+                                    label: 'Supprimer',
+                                    onClick: () => handleDeleteTask(task.id),
+                                    variant: 'danger',
+                                  },
+                                ]}
+                              />
                             </div>
                           </div>
                           
@@ -625,22 +636,23 @@ export default function TasksPage() {
                                         ? `${assignment.frequency_per_week}x/semaine`
                                         : '1x/semaine'}
                                     </span>
-                                    <div className="flex gap-[5px]">
-                                      <button
-                                        onClick={() => openAssignModal(task, assignment)}
-                                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-1.5 text-xs font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                                        aria-label="Modifier l'assignation"
-                                      >
-                                        Modifier
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteAssignment(assignment.id)}
-                                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
-                                        aria-label="Supprimer l'assignation"
-                                      >
-                                        Supprimer
-                                      </button>
-                                    </div>
+                                    <ContextActionsMenu
+                                      menuKey={`asg:${assignment.id}`}
+                                      openMenuKey={contextMenuKey}
+                                      onOpenMenuKeyChange={setContextMenuKey}
+                                      triggerAriaLabel="Menu assignation"
+                                      items={[
+                                        {
+                                          label: 'Modifier',
+                                          onClick: () => openAssignModal(task, assignment),
+                                        },
+                                        {
+                                          label: 'Supprimer',
+                                          onClick: () => handleDeleteAssignment(assignment.id),
+                                          variant: 'danger',
+                                        },
+                                      ]}
+                                    />
                                   </div>
                                   <div className="space-y-4 text-sm">
                                     <p className="text-[#6B7280]">
@@ -691,62 +703,27 @@ export default function TasksPage() {
                               <span>Charge mentale : {points.mentalLoad} pts</span>
                             </div>
                           </div>
-                          <div className="ml-4 relative">
-                            {/* Context Menu Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setTaskContextMenu(taskContextMenu === task.id ? null : task.id)
-                              }}
-                              className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-2 text-lg text-[#1F2937] transition-colors hover:bg-gray-100"
-                              aria-label="Menu"
-                            >
-                              ···
-                            </button>
-
-                            {/* Context Menu Dropdown */}
-                            {taskContextMenu === task.id && (
-                              <>
-                                {/* Backdrop */}
-                                <div
-                                  className="fixed inset-0 z-40"
-                                  onClick={() => setTaskContextMenu(null)}
-                                />
-                                
-                                {/* Menu */}
-                                <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm shadow-lg">
-                                  <div className="py-2">
-                                    <button
-                                      onClick={() => {
-                                        openEditPointsModal(task)
-                                        setTaskContextMenu(null)
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
-                                    >
-                                      Modifier les points
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        openAssignModal(task)
-                                        setTaskContextMenu(null)
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
-                                    >
-                                      Assigner à un membre
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        handleDeleteTask(task.id)
-                                        setTaskContextMenu(null)
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-100 transition-colors"
-                                    >
-                                      Supprimer
-                                    </button>
-                                  </div>
-                                </div>
-                              </>
-                            )}
+                          <div className="ml-4 shrink-0">
+                            <ContextActionsMenu
+                              menuKey={`task:${task.id}`}
+                              openMenuKey={contextMenuKey}
+                              onOpenMenuKeyChange={setContextMenuKey}
+                              items={[
+                                {
+                                  label: 'Modifier les points',
+                                  onClick: () => openEditPointsModal(task),
+                                },
+                                {
+                                  label: 'Assigner à un membre',
+                                  onClick: () => openAssignModal(task),
+                                },
+                                {
+                                  label: 'Supprimer',
+                                  onClick: () => handleDeleteTask(task.id),
+                                  variant: 'danger',
+                                },
+                              ]}
+                            />
                           </div>
                         </div>
                         
@@ -767,22 +744,23 @@ export default function TasksPage() {
                                       ? `${assignment.frequency_per_week}x/semaine`
                                       : '1x/semaine'}
                                   </span>
-                                  <div className="flex gap-[5px]">
-                                    <button
-                                      onClick={() => openAssignModal(task, assignment)}
-                                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-1.5 text-xs font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                                      aria-label="Modifier l'assignation"
-                                    >
-                                      Modifier
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteAssignment(assignment.id)}
-                                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
-                                      aria-label="Supprimer l'assignation"
-                                    >
-                                      Supprimer
-                                    </button>
-                                  </div>
+                                  <ContextActionsMenu
+                                    menuKey={`asg:${assignment.id}`}
+                                    openMenuKey={contextMenuKey}
+                                    onOpenMenuKeyChange={setContextMenuKey}
+                                    triggerAriaLabel="Menu assignation"
+                                    items={[
+                                      {
+                                        label: 'Modifier',
+                                        onClick: () => openAssignModal(task, assignment),
+                                      },
+                                      {
+                                        label: 'Supprimer',
+                                        onClick: () => handleDeleteAssignment(assignment.id),
+                                        variant: 'danger',
+                                      },
+                                    ]}
+                                  />
                                 </div>
                                 <div className="space-y-4 text-sm">
                                   <p className="text-[#6B7280]">
@@ -826,15 +804,11 @@ export default function TasksPage() {
                   className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                 >
                   <option value="">Toutes les catégories</option>
-                  <option value="administrative">Administratif</option>
-                  <option value="car_maintenance">Entretien automobile</option>
-                  <option value="parenting">Parentalité</option>
-                  <option value="cleaning">Nettoyage</option>
-                  <option value="cooking">Cuisine</option>
-                  <option value="diy">Bricolage</option>
-                  <option value="laundry">Lessive</option>
-                  <option value="other">Autre</option>
-                  <option value="shopping">Courses</option>
+                  {TASK_CATEGORIES_ALPHABETICAL_FR.map((key) => (
+                    <option key={key} value={key}>
+                      {translateCategory(key)}
+                    </option>
+                  ))}
 </select>
               </div>
 
@@ -867,9 +841,8 @@ export default function TasksPage() {
                         return
                       }
                       // Comparer avec String(t.id) car les IDs peuvent être des nombres dans la DB mais strings dans l'interface
-                      let template = filteredTemplates.find(t => String(t.id) === selectedId)
+                      let template = sortedFilteredTemplatesForAddModal.find(t => String(t.id) === selectedId)
                       if (!template) {
-                        // Si pas trouvé dans filteredTemplates, chercher dans tous les templates
                         template = templates.find(t => String(t.id) === selectedId)
                       }
                       if (template) {
@@ -885,7 +858,7 @@ export default function TasksPage() {
                     className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   >
                     <option value="">Sélectionnez une tâche</option>
-                    {filteredTemplates.map((template) => (
+                    {sortedFilteredTemplatesForAddModal.map((template) => (
                       <option key={template.id} value={String(template.id)}>
                         {translateTaskName(template.name)}
                       </option>
@@ -1139,6 +1112,7 @@ export default function TasksPage() {
           </div>
         )}
       </div>
+      <SuccessToast message={toastMessage} />
     </div>
   )
 }

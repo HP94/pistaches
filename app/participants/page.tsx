@@ -17,14 +17,17 @@ import {
   getUserHouseholds,
   getCurrentHousehold,
   createHousehold,
-  joinHouseholdByCode,
   type Household,
 } from '@/lib/supabase/households'
 import { translateGender, translateTaskName, translateCategory } from '@/lib/translations'
+import { pickHouseholdFromList, setStoredHouseholdId } from '@/lib/currentHouseholdStorage'
 import HouseholdSelector from '@/components/HouseholdSelector'
+import { ContextActionsMenu } from '@/components/ContextActionsMenu'
+import { canEditParticipant, canDeleteParticipant } from '@/lib/participantPermissions'
 import { getTasks, type TaskWithTemplate } from '@/lib/supabase/tasks'
 import { getTaskTemplates, type TaskTemplate, type TaskCategory } from '@/lib/supabase/taskTemplates'
 import { getAssignments, createAssignment, type AssignmentWithDetails } from '@/lib/supabase/assignments'
+import { SuccessToast, useSuccessToast } from '@/components/SuccessToast'
 
 export default function ParticipantsPage() {
   const router = useRouter()
@@ -60,6 +63,8 @@ export default function ParticipantsPage() {
   const [templates, setTemplates] = useState<TaskTemplate[]>([])
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([])
   const [expandedParticipants, setExpandedParticipants] = useState<Set<string>>(new Set())
+  const [participantMenuKey, setParticipantMenuKey] = useState<string | null>(null)
+  const { toastMessage, showSuccessToast } = useSuccessToast()
 
   useEffect(() => {
     const init = async () => {
@@ -111,11 +116,14 @@ export default function ParticipantsPage() {
       return
     }
     setHouseholds(data)
-    setCurrentHousehold(data[0])
+    setCurrentHousehold(pickHouseholdFromList(data, userId))
   }
 
-  const loadParticipants = async (householdId: string) => {
-    setLoading(true)
+  const loadParticipants = async (
+    householdId: string,
+    opts?: { silent?: boolean }
+  ) => {
+    if (!opts?.silent) setLoading(true)
     setError(null)
     try {
       // Load all data in parallel
@@ -152,7 +160,7 @@ export default function ParticipantsPage() {
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement des membres')
     } finally {
-      setLoading(false)
+      if (!opts?.silent) setLoading(false)
     }
   }
 
@@ -206,7 +214,8 @@ export default function ParticipantsPage() {
         if (error) throw error
       }
 
-      await loadParticipants(currentHousehold.id)
+      await loadParticipants(currentHousehold.id, { silent: true })
+      showSuccessToast()
       setShowForm(false)
       setEditingParticipant(null)
       setFormName('')
@@ -234,7 +243,8 @@ export default function ParticipantsPage() {
     try {
       const { error } = await deleteParticipant(id)
       if (error) throw error
-      await loadParticipants(currentHousehold.id)
+      await loadParticipants(currentHousehold.id, { silent: true })
+      showSuccessToast()
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la suppression')
     }
@@ -307,9 +317,9 @@ export default function ParticipantsPage() {
       )
       if (error) throw error
 
-      // Reload data
-      await loadParticipants(currentHousehold.id)
-      
+      await loadParticipants(currentHousehold.id, { silent: true })
+      showSuccessToast()
+
       // Close modal
       setShowAssignModal(false)
       setAssigningToParticipant(null)
@@ -427,7 +437,10 @@ export default function ParticipantsPage() {
                   currentHouseholdId={currentHousehold?.id || null}
                   onHouseholdChange={(id) => {
                     const household = households.find(h => h.id === id)
-                    if (household) setCurrentHousehold(household)
+                    if (household && userId) {
+                      setStoredHouseholdId(userId, id)
+                      setCurrentHousehold(household)
+                    }
                   }}
                 />
               )}
@@ -437,7 +450,13 @@ export default function ParticipantsPage() {
           <div className="mt-4 flex gap-2">
             {!showForm && (
               <button
-                onClick={() => setShowForm(true)}
+                type="button"
+                onClick={() => {
+                  setEditingParticipant(null)
+                  setFormName('')
+                  setFormGender('neutral')
+                  setShowForm(true)
+                }}
                 className="rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
               >
                 + Ajouter un membre
@@ -454,50 +473,12 @@ export default function ParticipantsPage() {
 
 
         {showForm && (
-          <div className="mb-8 rounded-lg border border-[#E5E7EB] bg-white p-6">
-            <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">
-              {editingParticipant ? 'Modifier le membre' : 'Nouveau membre'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-[#6B7280] mb-2">
-                  Nom
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  required
-                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                  placeholder="Nom du membre"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="gender" className="block text-sm font-medium text-[#6B7280] mb-2">
-                  Genre
-                </label>
-                <select
-                  id="gender"
-                  value={formGender}
-                  onChange={(e) => setFormGender(e.target.value as Gender)}
-                  required
-                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                >
-                  <option value="male">Homme</option>
-                  <option value="female">Femme</option>
-                  <option value="neutral">Neutre</option>
-                </select>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="flex-1 rounded-lg bg-[#93C572] px-4 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
-                >
-                  {editingParticipant ? 'Modifier' : 'Créer'}
-                </button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="w-full max-w-2xl rounded-lg border border-[#E5E7EB] bg-white p-8">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-[#1F2937]">
+                  {editingParticipant ? 'Modifier le membre' : 'Ajouter un membre'}
+                </h2>
                 <button
                   type="button"
                   onClick={() => {
@@ -506,12 +487,67 @@ export default function ParticipantsPage() {
                     setFormName('')
                     setFormGender('neutral')
                   }}
-                  className="flex-1 rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
+                  className="text-[#6B7280] hover:text-[#1F2937] transition-colors"
+                  aria-label="Fermer"
                 >
-                  Annuler
+                  ✕
                 </button>
               </div>
-            </form>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-[#6B7280] mb-2">
+                    Prénom ou surnom
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    required
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                    placeholder="Prénom ou surnom"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="gender" className="block text-sm font-medium text-[#6B7280] mb-2">
+                    Genre
+                  </label>
+                  <select
+                    id="gender"
+                    value={formGender}
+                    onChange={(e) => setFormGender(e.target.value as Gender)}
+                    required
+                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                  >
+                    <option value="male">Homme</option>
+                    <option value="female">Femme</option>
+                    <option value="neutral">Autre</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForm(false)
+                      setEditingParticipant(null)
+                      setFormName('')
+                      setFormGender('neutral')
+                    }}
+                    className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c]"
+                  >
+                    {editingParticipant ? 'Modifier' : 'Ajouter'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
@@ -519,7 +555,13 @@ export default function ParticipantsPage() {
           <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
             <p className="text-[#6B7280] mb-4">Aucun membre pour le moment.</p>
             <button
-              onClick={() => setShowForm(true)}
+              type="button"
+              onClick={() => {
+                setEditingParticipant(null)
+                setFormName('')
+                setFormGender('neutral')
+                setShowForm(true)
+              }}
               className="rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
             >
               Ajouter le premier membre
@@ -544,22 +586,37 @@ export default function ParticipantsPage() {
                       )}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(participant)}
-                      className="text-[#8B5CF6] hover:text-teal-300 transition-colors"
-                      title="Modifier"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => handleDelete(participant.id)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
-                      title="Supprimer"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+                  {userId && currentHousehold && (() => {
+                    const ownerId = currentHousehold.owner
+                    const canEdit = canEditParticipant(participant, userId, ownerId)
+                    const canDelete = canDeleteParticipant(userId, ownerId)
+                    const menuItems = [
+                      ...(canEdit
+                        ? [{ label: 'Modifier' as const, onClick: () => handleEdit(participant) }]
+                        : []),
+                      ...(canDelete
+                        ? [
+                            {
+                              label: 'Supprimer' as const,
+                              onClick: () => handleDelete(participant.id),
+                              variant: 'danger' as const,
+                            },
+                          ]
+                        : []),
+                    ]
+                    if (menuItems.length === 0) return null
+                    return (
+                      <div className="shrink-0">
+                        <ContextActionsMenu
+                          menuKey={participant.id}
+                          openMenuKey={participantMenuKey}
+                          onOpenMenuKeyChange={setParticipantMenuKey}
+                          triggerAriaLabel="Menu membre"
+                          items={menuItems}
+                        />
+                      </div>
+                    )
+                  })()}
                 </div>
 
                 {/* Assignment Stats */}
@@ -894,6 +951,7 @@ export default function ParticipantsPage() {
           </div>
         )}
       </div>
+      <SuccessToast message={toastMessage} />
     </div>
   )
 }

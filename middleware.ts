@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { RECOVERY_PENDING_COOKIE_NAME } from '@/lib/auth/recoveryCookie'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -34,15 +35,27 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession()
   const user = session?.user ?? null
 
+  const pathname = request.nextUrl.pathname
+  const recoveryPending =
+    request.cookies.get(RECOVERY_PENDING_COOKIE_NAME)?.value === '1'
+
+  // CORE #5 : tant que la réinitialisation n’est pas terminée, pas d’accès au reste de l’app
+  if (user && recoveryPending && pathname !== '/update-password') {
+    return NextResponse.redirect(new URL('/update-password', request.url))
+  }
+
   // Protected routes that require authentication
   const protectedRoutes = ['/participants', '/tasks', '/balance']
   const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
+    pathname.startsWith(route)
   )
 
-  // Auth routes that should redirect if already logged in
-  const authRoutes = ['/login', '/signup', '/reset-password', '/update-password']
-  const isAuthRoute = authRoutes.includes(request.nextUrl.pathname)
+  // Connexion / inscription / demande de lien : rediriger vers l’accueil si déjà connecté.
+  // Ne pas inclure /update-password : la session « recovery » est nécessaire pour changer le MDP.
+  const authRoutesRedirectWhenLoggedIn = ['/login', '/signup', '/reset-password']
+  const isAuthRouteRedirectWhenLoggedIn = authRoutesRedirectWhenLoggedIn.includes(
+    pathname
+  )
 
   // If user is not logged in and trying to access protected route
   if (!user && isProtectedRoute) {
@@ -51,8 +64,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If user is logged in and trying to access auth route, redirect to home
-  if (user && isAuthRoute) {
+  if (user && isAuthRouteRedirectWhenLoggedIn) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
@@ -63,6 +75,9 @@ export const config = {
   // Only these routes need auth redirects — avoids running middleware (and Supabase)
   // on every page, which caused MIDDLEWARE_INVOCATION_TIMEOUT on Vercel Edge.
   matcher: [
+    '/',
+    '/select-household',
+    '/select-household/:path*',
     '/participants/:path*',
     '/tasks/:path*',
     '/balance/:path*',

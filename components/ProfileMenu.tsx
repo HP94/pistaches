@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
 
 export default function ProfileMenu() {
+  const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -38,6 +39,10 @@ export default function ProfileMenu() {
 
   // Don't show if no user
   if (loading || !user) {
+    return null
+  }
+
+  if (pathname === '/update-password') {
     return null
   }
 

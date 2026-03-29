@@ -77,6 +77,21 @@ export async function createUserParticipant(
 }
 
 /**
+ * Rattache un compte utilisateur à un membre existant sans compte (fusion à l'entrée dans le foyer).
+ */
+export async function linkParticipantToUser(participantId: string, userId: string) {
+  const { data, error } = await supabase
+    .from('participants')
+    .update({ user_id: userId })
+    .eq('id', participantId)
+    .is('user_id', null)
+    .select()
+    .single()
+
+  return { data, error }
+}
+
+/**
  * Update a participant
  */
 export async function updateParticipant(

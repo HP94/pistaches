@@ -3,8 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { getUserHouseholds, joinHouseholdByCode, type Household } from '@/lib/supabase/households'
-import { createParticipant } from '@/lib/supabase/participants'
+import {
+  getUserHouseholds,
+  prepareJoinHousehold,
+  finalizeJoinNewMember,
+  finalizeJoinMerge,
+  type Household,
+} from '@/lib/supabase/households'
+import type { Participant } from '@/lib/supabase/participants'
+import { JoinHouseholdClaimStep } from '@/components/JoinHouseholdClaimStep'
 
 interface HouseholdSwitcherProps {
   currentHousehold: Household | null
@@ -20,6 +27,10 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [claimContext, setClaimContext] = useState<{
+    household: Household
+    nonUserMembers: Participant[]
+  } | null>(null)
 
   useEffect(() => {
     const getUser = async () => {
@@ -52,28 +63,81 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
     setLoading(true)
     setError(null)
     try {
+      const prepared = await prepareJoinHousehold(userId, joinCode)
+      if (!prepared.ok) {
+        setError(prepared.error)
+        return
+      }
+
+      if (prepared.case === 'already_member') {
+        await loadHouseholds(userId)
+        handleSelectHousehold(prepared.household)
+        setShowJoinForm(false)
+        setJoinCode('')
+        setShowModal(false)
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Utilisateur non connecté')
-
       const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Utilisateur'
-      const { data: household, error } = await joinHouseholdByCode(
+
+      if (prepared.case === 'need_claim') {
+        setClaimContext({
+          household: prepared.household,
+          nonUserMembers: prepared.nonUserMembers,
+        })
+        return
+      }
+
+      const { error: finErr } = await finalizeJoinNewMember(
+        prepared.household.id,
         userId,
-        joinCode,
         userName,
         'neutral'
       )
-      if (error) throw error
+      if (finErr) throw finErr
 
       await loadHouseholds(userId)
-      if (household) {
-        handleSelectHousehold(household)
-      }
+      handleSelectHousehold(prepared.household)
       setShowJoinForm(false)
       setJoinCode('')
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la jointure du foyer')
+      setShowModal(false)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la jointure du foyer')
+    } finally {
       setLoading(false)
     }
+  }
+
+  const handleClaimValidate = async (
+    choice: 'new' | { mergeParticipantId: string }
+  ) => {
+    if (!userId || !claimContext) return
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Utilisateur non connecté')
+    const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Utilisateur'
+
+    if (choice === 'new') {
+      const { error: finErr } = await finalizeJoinNewMember(
+        claimContext.household.id,
+        userId,
+        userName,
+        'neutral'
+      )
+      if (finErr) throw finErr
+    } else {
+      const { error: mergeErr } = await finalizeJoinMerge(choice.mergeParticipantId, userId)
+      if (mergeErr) throw mergeErr
+    }
+
+    await loadHouseholds(userId)
+    handleSelectHousehold(claimContext.household)
+    setClaimContext(null)
+    setShowJoinForm(false)
+    setJoinCode('')
+    setShowModal(false)
   }
 
   if (!currentHousehold) return null
@@ -96,6 +160,7 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
                 onClick={() => {
                   setShowModal(false)
                   setShowJoinForm(false)
+                  setClaimContext(null)
                   setError(null)
                 }}
                 className="text-[#6B7280] hover:text-[#1F2937] transition-colors"
@@ -154,6 +219,18 @@ export default function HouseholdSwitcher({ currentHousehold, onHouseholdChange 
                   </button>
                 </div>
               </>
+            ) : claimContext ? (
+              <JoinHouseholdClaimStep
+                household={claimContext.household}
+                nonUserMembers={claimContext.nonUserMembers}
+                variant="modal"
+                onValidate={handleClaimValidate}
+                onCancel={() => {
+                  setClaimContext(null)
+                  setJoinCode('')
+                  setError(null)
+                }}
+              />
             ) : (
               <form onSubmit={handleJoinHousehold} className="space-y-4">
                 <div>

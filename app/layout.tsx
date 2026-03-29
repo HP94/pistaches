@@ -4,6 +4,7 @@ import "./globals.css";
 import Navigation from "@/components/Navigation";
 import ProfileMenu from "@/components/ProfileMenu";
 import AuthRecovery from "@/components/AuthRecovery";
+import PasswordRecoveryListener from "@/components/PasswordRecoveryListener";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -44,6 +45,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthRecovery />
+        <PasswordRecoveryListener />
         <div className="flex-1 pb-[100px] sm:pb-0">
           {children}
         </div>

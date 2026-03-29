@@ -119,7 +119,7 @@ export const categoryTranslations: Record<string, string> = {
 export const genderTranslations: Record<string, string> = {
   male: 'Homme',
   female: 'Femme',
-  neutral: 'Neutre',
+  neutral: 'Autre',
 }
 
 /**

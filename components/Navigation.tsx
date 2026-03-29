@@ -15,7 +15,11 @@ const navItems = [
 
 export default function Navigation() {
   const pathname = usePathname()
-  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/reset-password'
+  const isAuthPage =
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname === '/reset-password' ||
+    pathname === '/update-password'
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -36,8 +40,12 @@ export default function Navigation() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Don't show navigation if not authenticated
   if (loading || !isAuthenticated) {
+    return null
+  }
+
+  // Pas de barre d’app sur les écrans auth (dont réinitialisation MDP avec session « recovery »)
+  if (isAuthPage) {
     return null
   }
 

@@ -1,5 +1,11 @@
 // Functions to manage households
 import { supabase } from './client'
+import {
+  createParticipant,
+  linkParticipantToUser,
+  type Participant,
+  type Gender,
+} from './participants'
 
 export interface Household {
   id: string
@@ -124,8 +130,72 @@ export async function getCurrentHousehold(userId: string) {
   return { data: data[0], error: null }
 }
 
+export type PrepareJoinResult =
+  | { ok: false; error: string }
+  | { ok: true; case: 'already_member'; household: Household }
+  | { ok: true; case: 'need_claim'; household: Household; nonUserMembers: Participant[] }
+  | { ok: true; case: 'direct_join'; household: Household }
+
 /**
- * Join a household by invitation code
+ * Étape 1 du flux « rejoindre un foyer » : valide le code et indique si un choix de membre est nécessaire.
+ */
+export async function prepareJoinHousehold(
+  userId: string,
+  invitationCode: string
+): Promise<PrepareJoinResult> {
+  const code = invitationCode.trim().toUpperCase()
+  const { data: household, error: householdError } = await getHouseholdByCode(code)
+
+  if (householdError || !household) {
+    return { ok: false, error: "Code d'invitation invalide" }
+  }
+
+  const { data: existingParticipant } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('household_id', household.id)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (existingParticipant) {
+    return { ok: true, case: 'already_member', household }
+  }
+
+  const { data: orphans } = await supabase
+    .from('participants')
+    .select('*')
+    .eq('household_id', household.id)
+    .is('user_id', null)
+
+  const nonUserMembers = (orphans || []) as Participant[]
+  if (nonUserMembers.length > 0) {
+    return { ok: true, case: 'need_claim', household, nonUserMembers }
+  }
+
+  return { ok: true, case: 'direct_join', household }
+}
+
+/**
+ * Crée un nouveau membre lié au compte (pas de fusion).
+ */
+export async function finalizeJoinNewMember(
+  householdId: string,
+  userId: string,
+  userName: string,
+  userGender: Gender
+) {
+  return createParticipant(householdId, userName, userGender, userId)
+}
+
+/**
+ * Fusionne le compte avec un membre sans compte existant.
+ */
+export async function finalizeJoinMerge(participantId: string, userId: string) {
+  return linkParticipantToUser(participantId, userId)
+}
+
+/**
+ * @deprecated Utiliser prepareJoinHousehold + finalizeJoinNewMember / finalizeJoinMerge
  */
 export async function joinHouseholdByCode(
   userId: string,
@@ -133,41 +203,30 @@ export async function joinHouseholdByCode(
   userName: string,
   userGender: 'male' | 'female' | 'neutral'
 ) {
-  // Get household by code
-  const { data: household, error: householdError } = await getHouseholdByCode(invitationCode)
-  
-  if (householdError || !household) {
-    return { data: null, error: householdError || new Error('Code d\'invitation invalide') }
+  const prepared = await prepareJoinHousehold(userId, invitationCode)
+  if (!prepared.ok) {
+    return { data: null, error: new Error(prepared.error) }
   }
-
-  // Check if user is already a participant in this household
-  const { data: existingParticipant } = await supabase
-    .from('participants')
-    .select('id')
-    .eq('household_id', household.id)
-    .eq('user_id', userId)
-    .single()
-
-  if (existingParticipant) {
-    return { data: household, error: null } // Already a member
+  if (prepared.case === 'already_member') {
+    return { data: prepared.household, error: null }
   }
-
-  // Create participant for this user in this household
-  const { data: participant, error: participantError } = await supabase
-    .from('participants')
-    .insert({
-      household_id: household.id,
-      user_id: userId,
-      name: userName,
-      gender: userGender,
-    })
-    .select()
-    .single()
-
-  if (participantError) {
-    return { data: null, error: participantError }
+  if (prepared.case === 'need_claim') {
+    return {
+      data: null,
+      error: new Error(
+        'REJOINDRE_FOYER: des membres sans compte existent — utilisez le flux de choix (prepareJoinHousehold).'
+      ),
+    }
   }
-
-  return { data: household, error: null }
+  const { error } = await finalizeJoinNewMember(
+    prepared.household.id,
+    userId,
+    userName,
+    userGender
+  )
+  if (error) {
+    return { data: null, error }
+  }
+  return { data: prepared.household, error: null }
 }
 
