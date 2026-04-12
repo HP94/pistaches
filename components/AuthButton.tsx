@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
+import { LegalPageLinks } from '@/components/LegalPageLinks'
 
 export default function AuthButton() {
   const router = useRouter()
@@ -56,16 +57,20 @@ export default function AuthButton() {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <span className="text-sm text-[#6B7280]">
-        {user.email}
-      </span>
-      <button
-        onClick={handleSignOut}
-        className="rounded-lg border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-50"
-      >
-        Déconnexion
-      </button>
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex max-w-full items-center gap-3">
+        <span className="max-w-[min(280px,40vw)] break-all text-right text-sm text-[#6B7280]">
+          {user.email}
+        </span>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="shrink-0 rounded-lg border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-50"
+        >
+          Déconnexion
+        </button>
+      </div>
+      <LegalPageLinks />
     </div>
   )
 }

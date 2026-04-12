@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
+import { LegalPageLinks } from '@/components/LegalPageLinks'
 
 export default function ProfileMenu() {
   const pathname = usePathname()
@@ -72,19 +73,17 @@ export default function ProfileMenu() {
           {/* Menu */}
           <div className="fixed bottom-[90px] left-4 z-50 w-64 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm p-4 shadow-xl sm:hidden">
             <div className="space-y-3">
-              {/* Email */}
-              <div className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3">
-                <p className="text-xs text-[#6B7280] mb-1">Email</p>
-                <p className="text-sm font-medium text-[#1F2937]">{user.email}</p>
-              </div>
+              <p className="break-all text-xs leading-snug text-[#6B7280]">{user.email}</p>
 
-              {/* Sign Out Button */}
               <button
+                type="button"
                 onClick={handleSignOut}
                 className="w-full rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
               >
                 Se déconnecter
               </button>
+
+              <LegalPageLinks onNavigate={() => setShowMenu(false)} />
             </div>
           </div>
         </>

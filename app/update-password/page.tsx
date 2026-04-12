@@ -9,6 +9,7 @@ import {
   clearRecoveryPendingCookie,
   setRecoveryPendingCookie,
 } from '@/lib/auth/recoveryCookie'
+import AuthScreenWithFooter from '@/components/AuthScreenWithFooter'
 
 export default function UpdatePasswordPage() {
   const router = useRouter()
@@ -103,55 +104,62 @@ export default function UpdatePasswordPage() {
 
   if (isValidToken === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-        <div className="text-center">
-          <div className="text-[#6B7280]">Vérification du lien...</div>
+      <AuthScreenWithFooter>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+          <div className="text-center">
+            <div className="text-[#6B7280]">Vérification du lien...</div>
+          </div>
         </div>
-      </div>
+      </AuthScreenWithFooter>
     )
   }
 
   if (isValidToken === false) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-        <div className="w-full max-w-md text-center">
-          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
-            <div className="mb-4 text-4xl">⚠️</div>
-            <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Lien invalide</h2>
-            <p className="text-[#6B7280] mb-4">
-              {error || 'Le lien de réinitialisation est invalide ou a expiré. Veuillez demander un nouveau lien.'}
-            </p>
-            <Link
-              href="/reset-password"
-              className="inline-block rounded-lg bg-[#93C572] px-6 py-3 font-medium text-[#1F2937] transition-colors hover:bg-[#7bad5c]"
-            >
-              Demander un nouveau lien
-            </Link>
+      <AuthScreenWithFooter>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md text-center">
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
+              <div className="mb-4 text-4xl">⚠️</div>
+              <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Lien invalide</h2>
+              <p className="text-[#6B7280] mb-4">
+                {error || 'Le lien de réinitialisation est invalide ou a expiré. Veuillez demander un nouveau lien.'}
+              </p>
+              <Link
+                href="/reset-password"
+                className="inline-block rounded-lg bg-[#93C572] px-6 py-3 font-medium text-[#1F2937] transition-colors hover:bg-[#7bad5c]"
+              >
+                Demander un nouveau lien
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </AuthScreenWithFooter>
     )
   }
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-        <div className="w-full max-w-md text-center">
-          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
-            <div className="mb-4 text-4xl">✅</div>
-            <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Mot de passe mis à jour !</h2>
-            <p className="text-[#6B7280] mb-4">
-              Vous pouvez maintenant vous connecter avec votre nouveau mot de passe. Redirection vers la page de connexion...
-            </p>
+      <AuthScreenWithFooter>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md text-center">
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 backdrop-blur-sm">
+              <div className="mb-4 text-4xl">✅</div>
+              <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Mot de passe mis à jour !</h2>
+              <p className="text-[#6B7280] mb-4">
+                Vous pouvez maintenant vous connecter avec votre nouveau mot de passe. Redirection vers la page de connexion...
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </AuthScreenWithFooter>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-      <div className="w-full max-w-md space-y-8">
+    <AuthScreenWithFooter>
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <img src="/pistaches-logo.svg" alt="Pistâches" className="mx-auto h-14 w-14" />
           <h1 className="mt-3 text-4xl font-bold text-[#1F2937]">Pistâches</h1>
@@ -213,8 +221,9 @@ export default function UpdatePasswordPage() {
             </Link>
           </p>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthScreenWithFooter>
   )
 }
 

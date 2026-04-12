@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn, signInWithGoogle, signOutLocal } from '@/lib/supabase/auth'
 import { supabase } from '@/lib/supabase/client'
+import AuthScreenWithFooter from '@/components/AuthScreenWithFooter'
 
 function LoginForm() {
   const router = useRouter()
@@ -80,8 +81,9 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-      <div className="w-full max-w-md space-y-8">
+    <AuthScreenWithFooter>
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <img src="/pistaches-logo.svg" alt="Pistâches" className="mx-auto h-14 w-14" />
           <h1 className="mt-3 text-4xl font-bold text-[#93C572]">Pistâches</h1>
@@ -188,18 +190,23 @@ function LoginForm() {
             </Link>
           </p>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthScreenWithFooter>
   )
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8]">
-        <div className="text-[#6B7280]">Chargement...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <AuthScreenWithFooter>
+          <div className="flex flex-1 items-center justify-center px-6 py-12">
+            <div className="text-[#6B7280]">Chargement...</div>
+          </div>
+        </AuthScreenWithFooter>
+      }
+    >
       <LoginForm />
     </Suspense>
   )

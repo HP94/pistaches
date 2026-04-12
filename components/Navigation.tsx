@@ -19,7 +19,10 @@ export default function Navigation() {
     pathname === '/login' ||
     pathname === '/signup' ||
     pathname === '/reset-password' ||
-    pathname === '/update-password'
+    pathname === '/update-password' ||
+    pathname === '/politique-confidentialite' ||
+    pathname === '/mentions-legales' ||
+    pathname === '/cgu'
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signUp, signInWithGoogle } from '@/lib/supabase/auth'
+import AuthScreenWithFooter from '@/components/AuthScreenWithFooter'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -59,23 +60,26 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-        <div className="w-full max-w-md text-center">
-          <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 shadow-md">
-            <div className="mb-4 text-4xl">✅</div>
-            <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Compte créé !</h2>
-            <p className="text-[#6B7280] mb-4">
-              Votre compte a été créé avec succès. Redirection vers la page de connexion...
-            </p>
+      <AuthScreenWithFooter>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md text-center">
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 shadow-md">
+              <div className="mb-4 text-4xl">✅</div>
+              <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Compte créé !</h2>
+              <p className="text-[#6B7280] mb-4">
+                Votre compte a été créé avec succès. Redirection vers la page de connexion...
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </AuthScreenWithFooter>
     )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-      <div className="w-full max-w-md space-y-8">
+    <AuthScreenWithFooter>
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <img src="/pistaches-logo.svg" alt="Pistâches" className="mx-auto h-14 w-14" />
           <h1 className="mt-3 text-4xl font-bold text-[#1F2937]">Pistâches</h1>
@@ -190,8 +194,9 @@ export default function SignupPage() {
             </Link>
           </p>
         </div>
+        </div>
       </div>
-    </div>
+    </AuthScreenWithFooter>
   )
 }
 
