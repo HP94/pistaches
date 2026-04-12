@@ -15,10 +15,6 @@ const ul = 'mt-2 list-disc space-y-1 pl-5'
 export default function PolitiqueConfidentialitePage() {
   return (
     <LegalDocumentLayout title="Politique de confidentialité" lastUpdated="12 avril 2026">
-      <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-        Document d’information à caractère général, non substitut à un conseil juridique. Faites
-        valider les textes par un professionnel avant engagement fort.
-      </p>
 
       <p>
         La présente politique décrit comment sont traitées les données personnelles dans le cadre du
@@ -104,29 +100,9 @@ export default function PolitiqueConfidentialitePage() {
       </p>
       <p>
         <strong>Sous-traitants</strong> (traitement pour le compte du responsable) : notamment{' '}
-        <strong>Supabase</strong> (hébergement de la base et authentification — région indiquée dans
-        votre projet, ex. Union européenne), <strong>Vercel</strong> (hébergement de l’application web
-        — ex. fonctions en France), <strong>Google</strong> (OAuth). Les transferts hors Union
-        européenne éventuels dépendent des contrats et documents des prestataires (DPA, clauses types,
-        etc.) — voir leurs sites officiels.
+        <strong>Supabase</strong> (hébergement de la base et authentification en Suède,Union européenne), <strong>Vercel</strong> (hébergement et fonctionsde l’application web en France), <strong>Google</strong> (OAuth) (Irlande, Union européenne).
       </p>
-      <ul className={`${ul} text-xs`}>
-        <li>
-          <a href="https://supabase.com/legal" target="_blank" rel="noopener noreferrer">
-            Supabase — Legal
-          </a>
-        </li>
-        <li>
-          <a href="https://vercel.com/legal" target="_blank" rel="noopener noreferrer">
-            Vercel — Legal
-          </a>
-        </li>
-        <li>
-          <a href="https://cloud.google.com/terms" target="_blank" rel="noopener noreferrer">
-            Google Cloud — Conditions
-          </a>
-        </li>
-      </ul>
+
 
       <h2 className={h2}>6. Durées de conservation</h2>
       <ul className={ul}>

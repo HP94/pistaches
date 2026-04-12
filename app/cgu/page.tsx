@@ -17,10 +17,6 @@ export default function CguPage() {
       title="Conditions générales d’utilisation (CGU)"
       lastUpdated="12 avril 2026"
     >
-      <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-        Document type à adapter avec un professionnel du droit. En cas de contradiction avec la loi,
-        les dispositions impératives prévalent.
-      </p>
 
       <h2 className={h2}>1. Objet</h2>
       <p>

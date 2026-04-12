@@ -13,10 +13,6 @@ const h2 = 'mt-8 text-base font-semibold text-[#1F2937] first:mt-0'
 export default function MentionsLegalesPage() {
   return (
     <LegalDocumentLayout title="Mentions légales" lastUpdated="12 avril 2026">
-      <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-        Conformément aux usages en France pour les sites et services en ligne. Complétez les
-        mentions d’identification si votre situation l’exige (entreprise, SIREN, siège social, etc.).
-      </p>
 
       <h2 className={h2}>1. Éditeur du site et du service</h2>
       <p>
@@ -44,21 +40,12 @@ export default function MentionsLegalesPage() {
 
       <h2 className={h2}>3. Hébergement</h2>
       <p>
-        L’application est hébergée par <strong>Vercel Inc.</strong>, société de droit américain.
+        L’application est hébergée en France par <strong>Vercel Inc.</strong>, société de droit américain.
       </p>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-        <li>Site : vercel.com</li>
-        <li>
-          Coordonnées et mentions légales :{' '}
-          <a href="https://vercel.com/legal" target="_blank" rel="noopener noreferrer">
-            vercel.com/legal
-          </a>
-        </li>
-      </ul>
+      
       <p className="text-xs text-[#6B7280]">
         Les données applicatives (comptes, foyers, contenus) sont stockées via{' '}
-        <strong>Supabase</strong> ; la région effective figure dans votre projet Supabase (souvent
-        Union européenne selon la configuration).
+        <strong>Supabase</strong> (Suède, Union européenne).
       </p>
 
       <h2 className={h2}>4. Propriété intellectuelle</h2>
