@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Nunito, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
-import ProfileMenu from "@/components/ProfileMenu";
 import AuthRecovery from "@/components/AuthRecovery";
 import PasswordRecoveryListener from "@/components/PasswordRecoveryListener";
 
@@ -50,8 +49,6 @@ export default function RootLayout({
           {children}
         </div>
         <Navigation />
-        {/* Profile menu for mobile */}
-        <ProfileMenu />
       </body>
     </html>
   );

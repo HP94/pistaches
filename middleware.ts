@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { RECOVERY_PENDING_COOKIE_NAME } from '@/lib/auth/recoveryCookie'
+import { hasAcceptedCgu } from '@/lib/legal/userConsent'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -44,6 +45,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/update-password', request.url))
   }
 
+  const cguExemptPaths = ['/accept-cgu', '/auth/oauth-complete']
+  if (
+    user &&
+    !recoveryPending &&
+    !hasAcceptedCgu(user) &&
+    !cguExemptPaths.includes(pathname)
+  ) {
+    return NextResponse.redirect(new URL('/accept-cgu', request.url))
+  }
+
   // Protected routes that require authentication
   const protectedRoutes = ['/participants', '/tasks', '/balance']
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -85,6 +96,8 @@ export const config = {
     '/signup',
     '/reset-password',
     '/update-password',
+    '/accept-cgu',
+    '/auth/oauth-complete',
   ],
 }
 

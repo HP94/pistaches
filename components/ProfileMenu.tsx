@@ -6,6 +6,10 @@ import { supabase } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
 import { LegalPageLinks } from '@/components/LegalPageLinks'
+import StatsConsentModal from '@/components/StatsConsentModal'
+
+const triggerClass =
+  'flex items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#1F2937] shadow-md transition-colors hover:bg-gray-50'
 
 export default function ProfileMenu() {
   const pathname = usePathname()
@@ -13,15 +17,14 @@ export default function ProfileMenu() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showMenu, setShowMenu] = useState(false)
+  const [statsModalOpen, setStatsModalOpen] = useState(false)
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -33,12 +36,12 @@ export default function ProfileMenu() {
   }, [router])
 
   const handleSignOut = async () => {
+    setShowMenu(false)
     await signOut()
     router.push('/login')
     router.refresh()
   }
 
-  // Don't show if no user
   if (loading || !user) {
     return null
   }
@@ -47,48 +50,86 @@ export default function ProfileMenu() {
     return null
   }
 
-  // Get user initial from email
   const userInitial = user.email?.charAt(0).toUpperCase() || 'U'
+
+  const menuBody = (
+    <div className="space-y-3">
+      <p className="break-all text-xs leading-snug text-[#6B7280]">{user.email}</p>
+
+      <button
+        type="button"
+        onClick={() => {
+          setShowMenu(false)
+          setStatsModalOpen(true)
+        }}
+        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-left text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-50"
+      >
+        Gérer mes consentements
+      </button>
+
+      <button
+        type="button"
+        onClick={() => void handleSignOut()}
+        className="w-full rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
+      >
+        Se déconnecter
+      </button>
+
+      <LegalPageLinks onNavigate={() => setShowMenu(false)} />
+    </div>
+  )
 
   return (
     <>
-      {/* Profile Icon Button - Bottom Left */}
+      <StatsConsentModal
+        open={statsModalOpen}
+        onClose={() => setStatsModalOpen(false)}
+        user={user}
+      />
+
+      {showMenu && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50"
+          aria-hidden
+          onClick={() => setShowMenu(false)}
+        />
+      )}
+
+      {/* Mobile : bouton fixe bas-gauche + menu qui remonte */}
       <button
+        type="button"
         onClick={() => setShowMenu(!showMenu)}
-        className="fixed bottom-[30px] left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#1F2937] shadow-md transition-colors hover:bg-gray-50 sm:hidden"
+        className={`${triggerClass} fixed bottom-[30px] left-4 z-50 h-12 w-12 sm:hidden`}
         aria-label="Menu profil"
+        aria-expanded={showMenu}
       >
         <span className="text-lg font-semibold">{userInitial}</span>
       </button>
 
-      {/* Drop-up Menu */}
       {showMenu && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/50 sm:hidden"
-            onClick={() => setShowMenu(false)}
-          />
-          
-          {/* Menu */}
-          <div className="fixed bottom-[90px] left-4 z-50 w-64 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm p-4 shadow-xl sm:hidden">
-            <div className="space-y-3">
-              <p className="break-all text-xs leading-snug text-[#6B7280]">{user.email}</p>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="w-full rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-              >
-                Se déconnecter
-              </button>
-
-              <LegalPageLinks onNavigate={() => setShowMenu(false)} />
-            </div>
-          </div>
-        </>
+        <div className="fixed bottom-[90px] left-4 z-50 w-64 rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-xl sm:hidden">
+          {menuBody}
+        </div>
       )}
+
+      {/* Desktop (sm+) : même menu, dans la barre de navigation à droite */}
+      <div className="relative z-50 hidden shrink-0 sm:block">
+        <button
+          type="button"
+          onClick={() => setShowMenu(!showMenu)}
+          className={`${triggerClass} h-12 w-12`}
+          aria-label="Menu profil"
+          aria-expanded={showMenu}
+        >
+          <span className="text-lg font-semibold">{userInitial}</span>
+        </button>
+
+        {showMenu && (
+          <div className="absolute bottom-full right-0 z-50 mb-2 w-64 rounded-lg border border-[#E5E7EB] bg-white p-4 shadow-xl">
+            {menuBody}
+          </div>
+        )}
+      </div>
     </>
   )
 }
-

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signUp, signInWithGoogle } from '@/lib/supabase/auth'
 import AuthScreenWithFooter from '@/components/AuthScreenWithFooter'
+import ConsentCheckboxes from '@/components/ConsentCheckboxes'
+import { CGU_VERSION, OAUTH_SIGNUP_CHOICES_KEY } from '@/lib/legal/userConsent'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -14,9 +16,19 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [acceptCgu, setAcceptCgu] = useState(false)
+  const [statsConsent, setStatsConsent] = useState(false)
+
+  const canSubmitEmail =
+    acceptCgu &&
+    email.trim().length > 0 &&
+    password.length >= 6 &&
+    password === confirmPassword
+  const canUseGoogle = acceptCgu
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!acceptCgu || !canSubmitEmail) return
     setLoading(true)
     setError(null)
 
@@ -32,7 +44,9 @@ export default function SignupPage() {
       return
     }
 
-    const { error } = await signUp(email, password)
+    const { error } = await signUp(email, password, {
+      statsResearchConsent: statsConsent,
+    })
 
     if (error) {
       setError(error.message)
@@ -47,12 +61,37 @@ export default function SignupPage() {
   }
 
   const handleGoogleSignup = async () => {
+    if (!acceptCgu) return
     setLoading(true)
     setError(null)
+
+    try {
+      const now = new Date().toISOString()
+      sessionStorage.setItem(
+        OAUTH_SIGNUP_CHOICES_KEY,
+        JSON.stringify({
+          cguAcceptedAt: now,
+          cguVersion: CGU_VERSION,
+          statsResearchConsent: statsConsent,
+          flowStartedAt: now,
+        })
+      )
+    } catch {
+      setError(
+        'Impossible de préparer l’inscription. Vérifiez que le stockage du navigateur n’est pas bloqué.'
+      )
+      setLoading(false)
+      return
+    }
 
     const { error } = await signInWithGoogle()
 
     if (error) {
+      try {
+        sessionStorage.removeItem(OAUTH_SIGNUP_CHOICES_KEY)
+      } catch {
+        /* ignore */
+      }
       setError(error.message)
       setLoading(false)
     }
@@ -141,10 +180,17 @@ export default function SignupPage() {
               />
             </div>
 
+            <ConsentCheckboxes
+              acceptCgu={acceptCgu}
+              onAcceptCguChange={setAcceptCgu}
+              statsConsent={statsConsent}
+              onStatsConsentChange={setStatsConsent}
+            />
+
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-teal-500 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !canSubmitEmail}
+              className="w-full rounded-lg bg-teal-500 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Création...' : 'Créer un compte'}
             </button>
@@ -161,9 +207,10 @@ export default function SignupPage() {
             </div>
 
             <button
-              onClick={handleGoogleSignup}
-              disabled={loading}
-              className="mt-6 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => void handleGoogleSignup()}
+              disabled={loading || !canUseGoogle}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-3 font-medium text-[#1F2937] transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path

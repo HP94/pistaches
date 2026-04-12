@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import AuthButton from './AuthButton'
+import ProfileMenu from '@/components/ProfileMenu'
 
 const navItems = [
   { href: '/', label: 'Accueil' },
@@ -20,6 +20,8 @@ export default function Navigation() {
     pathname === '/signup' ||
     pathname === '/reset-password' ||
     pathname === '/update-password' ||
+    pathname === '/accept-cgu' ||
+    pathname === '/auth/oauth-complete' ||
     pathname === '/politique-confidentialite' ||
     pathname === '/mentions-legales' ||
     pathname === '/cgu'
@@ -53,12 +55,9 @@ export default function Navigation() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E5E7EB] bg-white/95 backdrop-blur-sm pb-[30px] sm:pb-0 sm:relative sm:border-t-0 sm:border-b sm:bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 overflow-visible border-t border-[#E5E7EB] bg-white/95 pb-[30px] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] backdrop-blur-sm sm:relative sm:border-b sm:border-t-0 sm:bg-white sm:pb-0">
       <div className="mx-auto flex max-w-4xl items-center justify-between sm:gap-8 sm:px-6 sm:py-4 pl-20 pr-4 sm:pl-6">
-        <Link href="/" className="hidden sm:flex shrink-0 items-center gap-2">
-          <img src="/pistaches-logo.svg" alt="Pistâches" className="h-8 w-8" />
-        </Link>
-        <div className="flex items-center justify-between sm:justify-start sm:gap-8 flex-1 gap-2">
+        <div className="flex flex-1 items-center justify-between gap-2 sm:justify-start sm:gap-8">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -76,11 +75,7 @@ export default function Navigation() {
             )
           })}
         </div>
-        {!isAuthPage && (
-          <div className="hidden sm:block">
-            <AuthButton />
-          </div>
-        )}
+        {!isAuthPage && <ProfileMenu />}
       </div>
     </nav>
   )

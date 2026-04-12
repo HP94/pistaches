@@ -1,13 +1,21 @@
 // Authentication utility functions
+import { buildSignupUserMetadata } from '@/lib/legal/userConsent'
 import { supabase } from './client'
 
 /**
  * Sign up a new user with email and password
  */
-export async function signUp(email: string, password: string) {
+export async function signUp(
+  email: string,
+  password: string,
+  consent: { statsResearchConsent: boolean }
+) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: buildSignupUserMetadata(consent.statsResearchConsent),
+    },
   })
   return { data, error }
 }
