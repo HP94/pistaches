@@ -68,7 +68,6 @@ INSERT INTO public.task_templates (name, category, default_points, default_menta
 ('Painting / touch-ups', 'diy', 50, 10),
 ('Garden maintenance', 'diy', 40, 10),
 ('Yard work', 'diy', 50, 0),
-('Changing light bulbs', 'diy', 20, 10),
 ('Fixing broken items', 'diy', 40, 20),
 
 -- ADMINISTRATIVE TASKS

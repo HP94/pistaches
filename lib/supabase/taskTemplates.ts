@@ -18,6 +18,8 @@ export type TaskCategory =
   | 'car_maintenance'
   | 'diy'
   | 'administrative'
+  | 'pet_care'
+  | 'travel'
   | 'other'
 
 /**

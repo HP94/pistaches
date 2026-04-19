@@ -4,14 +4,16 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHousehold } from '@/lib/hooks/useHousehold'
 import { getTasks, createTask, updateTaskPoints, deleteTask, type TaskWithTemplate } from '@/lib/supabase/tasks'
-import { getTaskTemplates, type TaskTemplate } from '@/lib/supabase/taskTemplates'
+import {
+  getTaskTemplates,
+  type TaskCategory,
+  type TaskTemplate,
+} from '@/lib/supabase/taskTemplates'
 import { getAssignments, createAssignment, updateAssignment, deleteAssignment, deleteAllAssignmentsForHousehold, type AssignmentWithDetails } from '@/lib/supabase/assignments'
 import { getParticipants, type Participant } from '@/lib/supabase/participants'
 import { translateTaskName, translateCategory } from '@/lib/translations'
 import { ContextActionsMenu } from '@/components/ContextActionsMenu'
 import { SuccessToast, useSuccessToast } from '@/components/SuccessToast'
-
-type TaskCategory = 'administrative' | 'car_maintenance' | 'parenting' | 'cleaning' | 'cooking' | 'diy' | 'laundry' | 'other' | 'shopping'
 
 const ALL_TASK_CATEGORIES: TaskCategory[] = [
   'administrative',
@@ -22,7 +24,9 @@ const ALL_TASK_CATEGORIES: TaskCategory[] = [
   'laundry',
   'other',
   'parenting',
+  'pet_care',
   'shopping',
+  'travel',
 ]
 
 /** Ordre alphabétique des libellés FR (pour le select « Ajouter une tâche » ; « Toutes les catégories » reste séparé) */

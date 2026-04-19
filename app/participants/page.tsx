@@ -29,6 +29,23 @@ import { getTaskTemplates, type TaskTemplate, type TaskCategory } from '@/lib/su
 import { getAssignments, createAssignment, type AssignmentWithDetails } from '@/lib/supabase/assignments'
 import { SuccessToast, useSuccessToast } from '@/components/SuccessToast'
 
+/** Ordre d’affichage FR (comme la page Tâches) pour le filtre catégorie à l’assignation */
+const ASSIGN_TASK_CATEGORIES_FR = (
+  [
+    'administrative',
+    'car_maintenance',
+    'cleaning',
+    'cooking',
+    'diy',
+    'laundry',
+    'other',
+    'parenting',
+    'pet_care',
+    'shopping',
+    'travel',
+  ] as TaskCategory[]
+).sort((a, b) => translateCategory(a).localeCompare(translateCategory(b), 'fr'))
+
 export default function ParticipantsPage() {
   const router = useRouter()
   const [participants, setParticipants] = useState<Participant[]>([])
@@ -769,15 +786,11 @@ export default function ParticipantsPage() {
                       className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                     >
                       <option value="">Toutes les catégories</option>
-                      <option value="cleaning">Nettoyage</option>
-                      <option value="cooking">Cuisine</option>
-                      <option value="parenting">Parentalité</option>
-                      <option value="laundry">Lessive</option>
-                      <option value="shopping">Courses</option>
-                      <option value="car_maintenance">Entretien automobile</option>
-                      <option value="diy">Bricolage</option>
-                      <option value="administrative">Administratif</option>
-                      <option value="other">Autre</option>
+                      {ASSIGN_TASK_CATEGORIES_FR.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {translateCategory(cat)}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

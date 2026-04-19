@@ -46,7 +46,6 @@ UPDATE public.task_templates SET default_points = 40, default_mental_load_points
 UPDATE public.task_templates SET default_points = 40, default_mental_load_points = 10 WHERE name = 'Painting / touch-ups';
 UPDATE public.task_templates SET default_points = 40, default_mental_load_points = 10 WHERE name = 'Garden maintenance';
 UPDATE public.task_templates SET default_points = 50, default_mental_load_points = 0 WHERE name = 'Yard work';
-UPDATE public.task_templates SET default_points = 10, default_mental_load_points = 0 WHERE name = 'Changing light bulbs';
 UPDATE public.task_templates SET default_points = 40, default_mental_load_points = 20 WHERE name = 'Fixing broken items';
 
 UPDATE public.task_templates SET default_points = 30, default_mental_load_points = 40 WHERE name = 'Organizing documents';

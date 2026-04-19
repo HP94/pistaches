@@ -29,19 +29,26 @@ Chaque tâche est définie avec :
 - **Nom FR** : Parentalité
 
 ### laundry
-- **Nom FR** : Lessive
+- **Nom FR** : Linge
 
 ### shopping
-- **Nom FR** : Courses
+- **Nom FR** : Achats
 
 ### car_maintenance
 - **Nom FR** : Entretien automobile
 
 ### diy
-- **Nom FR** : Bricolage
+- **Nom FR** : Bricolage/Jardin
 
 ### administrative
 - **Nom FR** : Administratif
+
+### pet_care
+- **Nom FR** : Animaux domestiques
+
+### travel
+- **Nom FR** : Voyages/Week-end
+
 
 ### other
 - **Nom FR** : Autre
@@ -54,47 +61,52 @@ Chaque tâche est définie avec :
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
-| Dishes (washing) | Vaisselle (lavage) | 20 | 0 |
-| Loading/unloading dishwasher | Charger/décharger le lave-vaisselle | 10 | 0 |
+| Dishes (washing) | Faire la Vaisselle | 20 | 0 |
+| Loading/unloading dishwasher | Remplir/Vider le lave-vaisselle | 10 | 0 |
 | Vacuuming | Passer l'Aspirateur | 30 | 0 |
-| Mopping floors | Lavage du sol | 30 | 0 |
-| Cleaning bathrooms | Nettoyage salle de bain | 40 | 10 |
-| Cleaning toilets | Nettoyage toilettes | 40 | 10 |
-| Cleaning kitchen | Nettoyage cuisine | 20 | 0 |
+| Mopping floors | Laver le sol | 30 | 0 |
+| Cleaning bathrooms | Nettoyer la salle de bain | 40 | 10 |
+| Cleaning toilets | Nettoyer les toilettes | 40 | 10 |
+| Cleaning kitchen | Nettoyer la cuisine | 20 | 0 |
 | Dusting | Dépoussiérage | 20 | 0 |
-| Cleaning windows | Nettoyage des fenêtres | 30 | 0 |
+| Cleaning windows | Nettoyer les fenêtres | 30 | 10 |
 | Taking out trash | Sortir les poubelles | 10 | 10 |
-| Cleaning refrigerator | Nettoyage du réfrigérateur | 40 | 0 |
-| Cleaning oven | Nettoyage du four | 50 | 0 |
-| Deep cleaning (spring cleaning) | Grand ménage | 80 | 20 |
+| Cleaning refrigerator | Nettoyer le réfrigérateur | 40 | 0 |
+| Cleaning oven | Nettoyer le four | 50 | 0 |
 
 ### cooking (Cuisine)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
-| Meal planning | Planification des repas | 20 | 50 |
-| Grocery shopping for meals | Courses alimentaires | 30 | 20 |
-| Cooking breakfast | Préparation du petit-déjeuner | 20 | 0 |
-| Cooking Meals | Préparation des repas | 30 | 0 |
-| Setting the table | Mettre la table | 10 | 0 |
-| Clearing the table | Débarrasser la table | 10 | 0 |
+| Meal planning | Planifier les repas | 20 | 50 |
+| Grocery shopping for meals | Faire les courses | 30 | 20 |
+| Cooking breakfast | Préparer le petit-déjeuner | 20 | 0 |
+| Cooking Meals | Préparer les repas | 30 | 0 |
+| Setting the table | Mettre/Débarrasser la table | 10 | 0 |
 
 ### parenting (Parentalité)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
-| Morning routine with kids | Routine matinale | 40 | 20 |
-| Bedtime routine with kids | Routine du coucher | 40 | 20 |
 | Helping with homework | Aide aux devoirs | 30 | 20 |
 | School drop-off | Déposer à l'école | 20 | 10 |
 | School pick-up | Récupérer à l'école | 20 | 10 |
-| Organizing kids activities | Organisation des activités des enfants | 30 | 40 |
-| Bathing children | Donner le bain aux enfants | 30 | 0 |
+| Organizing kids activities | Organiser les activités des enfants | 30 | 40 |
+| Bathing children | Donner le bain | 30 | 0 |
 | Feeding children | Nourrir les enfants | 20 | 10 |
 | Playing with children | Jouer avec les enfants | 30 | 0 |
-| Managing kids appointments | Gestion des rendez-vous des enfants | 20 | 50 |
+| Managing kids appointments | Gérer les rendez-vous des enfants | 20 | 50 |
+| Wake up kids | Réveiller les enfants | 40 | 20 |
+| Dress the kids | Habiller les enfants | 40 | 20 |
+| Read a story | Lire une histoire | 40 | 20 |
+| Change diapers | Changer les couches | 40 | 20 |
+| Night baby care | Se réveiller la nuit | 60 | 0 |
+| Buy clothes | Acheter les vêtements | 30 | 20 |
+| Take them to activities | Amener aux activités | 20 | 10 |
+| Pick them up from activities | Récupérer des activités | 20 | 10 |
 
-### laundry (Lessive)
+
+### laundry (Linge)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
@@ -104,61 +116,70 @@ Chaque tâche est définie avec :
 | Hang out the laundry | Étendre le linge | 30 | 10 |
 | Take the laundry down | Ramasser le linge | 20 | 10 |
 | Ironing | Repassage | 40 | 10 |
-| Changing bed sheets | Changer les draps | 20 | 10 |
+| Changing bed sheets / towels | Changer les draps/Serviette | 20 | 10 |
 
-### shopping (Courses)
+### shopping (Achats)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
-| Grocery shopping (general) | Courses alimentaires (général) | 30 | 20 |
-| Shopping for household items | Achats d'articles ménagers | 30 | 20 |
+| Shopping for household items | Achats pour la maison | 30 | 20 |
 | Comparing prices / finding deals | Comparer les prix / trouver des bonnes affaires | 20 | 30 |
 
 ### car_maintenance (Entretien automobile)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
-| Car maintenance / oil change | Entretien de la voiture / vidange | 40 | 20 |
+| Car maintenance / oil change | Réparation de la voiture / vidange | 20 | 20 |
 | Car cleaning (interior) | Nettoyage de la voiture (intérieur) | 30 | 0 |
 | Car cleaning (exterior) | Nettoyage de la voiture (extérieur) | 30 | 0 |
 | Filling up gas tank | Faire le plein | 10 | 0 |
-| Car inspection / registration | Contrôle technique / immatriculation | 30 | 30 |
+| Car inspection / registration | Contrôle technique | 20 | 20 |
 
-### diy (Bricolage)
+### diy (Bricolage/Jardin)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
-| Home repairs | Réparations à la maison | 50 | 20 |
-| Furniture assembly | Montage de meubles | 40 | 10 |
-| Painting / touch-ups | Peinture / retouches | 40 | 10 |
+| Furniture assembly | Monter les meubles | 20 | 10 |
+| Painting / repairs | Peinture / Réparation | 40 | 10 |
 | Garden maintenance | Entretien du jardin | 40 | 10 |
-| Yard work | Travaux de jardinage | 50 | 0 |
-| Changing light bulbs | Changer les ampoules | 10 | 0 |
-| Fixing broken items | Réparer les objets cassés | 40 | 20 |
+| Upkeep / DIY | Entretien / Bricolage | 40 | 20 |
 
 ### administrative (Administratif)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
 | Paying bills | Payer les factures | 20 | 30 |
-| Managing household budget | Gestion du budget du foyer | 30 | 50 |
-| Scheduling appointments | Prise de rendez-vous | 20 | 40 |
-| Managing insurance | Gestion des assurances | 30 | 50 |
-| Tax Managing | Gestion des impôts | 50 | 60 |
-| Organizing documents | Organisation des documents | 30 | 40 |
-| Managing subscriptions | Gestion des abonnements | 20 | 30 |
+| Managing household budget | Gérer le budget | 30 | 50 |
+| Managing insurance | Gérer les assurances | 30 | 50 |
+| Tax Managing | Gérer les impôts | 50 | 60 |
+| Organizing documents | Organiser les documents | 30 | 40 |
+| Managing subscriptions | Gérer les abonnements | 20 | 30 |
 
-### other (Autre)
+
+### pet_care (Animaux domestiques)
 
 | name_en | name_fr | default_points | default_mental_load_points |
 |---------|---------|----------------|---------------------------|
 | Feeding pet | Nourrir les animaux | 20 | 10 |
 | Walking pet | Promener les animaux | 20 | 0 |
 | Vet appointments | Rendez-vous vétérinaire | 20 | 30 |
-| Watering plants | Arrosage des plantes | 10 | 0 |
-| Receiving packages | Réception de colis | 10 | 0 |
-| Managing mail | Gestion du courrier | 10 | 10 |
-| Planning family events | Organisation d'événements familiaux | 30 | 60 |
+| Clean the litter box | Nettoyer la litière | 20 | 30 |
+
+### travel (Voyages/Week-end)
+
+| name_en | name_fr | default_points | default_mental_load_points |
+|---------|---------|----------------|---------------------------|
+| Plan trips | Organiser les voyages | 30 | 30 |
+| Plan weekends | Organiser les week-ends | 40 | 50 |
+
+
+### other (Autre)
+
+| name_en | name_fr | default_points | default_mental_load_points |
+|---------|---------|----------------|---------------------------|
+| Watering plants | Arroser les plantes | 10 | 0 |
+| Receiving packages | Réceptionner les colis | 10 | 0 |
+| Planning family events | Organiser les événements familiaux | 30 | 60 |
 
 ---
 
