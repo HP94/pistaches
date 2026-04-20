@@ -294,7 +294,7 @@ export default function BalancePage() {
                             
                             <div className="mt-4 grid gap-4 sm:grid-cols-3">
                               <div>
-                                <p className="text-sm text-[#6B7280]">Points performer</p>
+                                <p className="text-sm text-[#6B7280]">Points réalisation</p>
                                 <p className="text-lg font-semibold text-[#8B5CF6]">
                                   {period === 'weekly' 
                                     ? `${balance.performerPointsWeekly.toFixed(0)} pts/sem`

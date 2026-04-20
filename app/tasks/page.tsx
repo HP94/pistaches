@@ -202,17 +202,18 @@ export default function TasksPage() {
   }
 
   const handleCreateAssignment = async () => {
-    if (!assigningTask || !selectedPerformer || !selectedThinker) return
+    if (!assigningTask || !selectedPerformer) return
 
     setError(null)
     setLoading(true)
     try {
       // null for one-time tasks, number for frequent tasks
       const finalFrequency = isFrequentTask ? frequencyPerWeek : null
+      const thinkerId = selectedThinker === '' ? null : selectedThinker
       const { error } = await createAssignment(
         assigningTask.id,
         selectedPerformer,
-        selectedThinker,
+        thinkerId,
         finalFrequency
       )
       if (error) throw error
@@ -234,17 +235,18 @@ export default function TasksPage() {
   }
 
   const handleUpdateAssignment = async () => {
-    if (!editingAssignment || !selectedPerformer || !selectedThinker) return
+    if (!editingAssignment || !selectedPerformer) return
 
     setError(null)
     setLoading(true)
     try {
       // null for one-time tasks, number for frequent tasks
       const finalFrequency = isFrequentTask ? frequencyPerWeek : null
+      const thinkerId = selectedThinker === '' ? null : selectedThinker
       const { error } = await updateAssignment(
         editingAssignment.id,
         selectedPerformer,
-        selectedThinker,
+        thinkerId,
         finalFrequency
       )
       if (error) throw error
@@ -339,7 +341,7 @@ export default function TasksPage() {
 
   const getEffectivePoints = (task: TaskWithTemplate) => {
     return {
-      performer: task.performer_points ?? task.task_templates.default_points,
+      realisation: task.performer_points ?? task.task_templates.default_points,
       mentalLoad: task.mental_load_points ?? task.task_templates.default_mental_load_points,
     }
   }
@@ -595,7 +597,7 @@ export default function TasksPage() {
                                 {translateTaskName(task.task_templates.name)}
                               </h3>
                               <div className="flex flex-col gap-1 text-sm text-[#6B7280]">
-                                <span>Réalisation : {points.performer} pts</span>
+                                <span>Réalisation : {points.realisation} pts</span>
                                 <span>Charge mentale : {points.mentalLoad} pts</span>
                               </div>
                             </div>
@@ -703,7 +705,7 @@ export default function TasksPage() {
                               {translateTaskName(task.task_templates.name)}
                             </h3>
                             <div className="flex flex-col gap-1 text-sm text-[#6B7280]">
-                              <span>Réalisation : {points.performer} pts</span>
+                              <span>Réalisation : {points.realisation} pts</span>
                               <span>Charge mentale : {points.mentalLoad} pts</span>
                             </div>
                           </div>
@@ -906,14 +908,14 @@ export default function TasksPage() {
               
               <div className="mb-4">
                 <p className="mb-2 text-sm text-[#6B7280]">
-                  Points par défaut : {editingTask.task_templates.default_points} (performer), {editingTask.task_templates.default_mental_load_points} (mental load)
+                  Points par défaut : {editingTask.task_templates.default_points} (réalisation), {editingTask.task_templates.default_mental_load_points} (charge mentale)
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                    Points performer (0-100, par pas de 10)
+                    Points réalisation (0-100, par pas de 10)
                   </label>
                   <input
                     type="number"
@@ -974,7 +976,7 @@ export default function TasksPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                    Qui fait la tâche ? (performer) <span className="text-red-600">*</span>
+                    Qui fait la tâche ? (réalisation) <span className="text-red-600">*</span>
                   </label>
                   <select
                     value={selectedPerformer}
@@ -992,15 +994,15 @@ export default function TasksPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                    Qui pense à la tâche ? (charge mentale) <span className="text-red-600">*</span>
+                    Qui pense à la tâche ? (charge mentale){' '}
+                    <span className="text-[#6B7280] font-normal">(facultatif)</span>
                   </label>
                   <select
                     value={selectedThinker}
                     onChange={(e) => setSelectedThinker(e.target.value)}
-                    required
                     className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
                   >
-                    <option value="">Sélectionnez un membre</option>
+                    <option value="">Personne</option>
                     {participants.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -1074,7 +1076,7 @@ export default function TasksPage() {
                 </button>
                 <button
                   onClick={editingAssignment ? handleUpdateAssignment : handleCreateAssignment}
-                  disabled={!selectedPerformer || !selectedThinker || loading}
+                  disabled={!selectedPerformer || loading}
                   className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Enregistrement...' : editingAssignment ? 'Modifier' : 'Assigner'}
