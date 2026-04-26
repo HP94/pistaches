@@ -34,6 +34,20 @@ const TASK_CATEGORIES_ALPHABETICAL_FR = [...ALL_TASK_CATEGORIES].sort((a, b) =>
   translateCategory(a).localeCompare(translateCategory(b), 'fr')
 )
 
+const CATEGORY_EMOJIS: Record<TaskCategory, string> = {
+  administrative: '🧾',
+  car_maintenance: '🚗',
+  cleaning: '🧹',
+  cooking: '🍳',
+  diy: '🛠️',
+  laundry: '🧺',
+  other: '✨',
+  parenting: '👨‍👩‍👧',
+  pet_care: '🐾',
+  shopping: '🛍️',
+  travel: '🧳',
+}
+
 export default function TasksPage() {
   const router = useRouter()
   const { currentHousehold, loading: householdLoading } = useHousehold()
@@ -49,6 +63,7 @@ export default function TasksPage() {
   const [showAddTaskModal, setShowAddTaskModal] = useState(false)
   const [showEditPointsModal, setShowEditPointsModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [addTaskStep, setAddTaskStep] = useState<1 | 2>(1)
   
   // Form states
   const [selectedCategory, setSelectedCategory] = useState<TaskCategory | ''>('')
@@ -124,39 +139,66 @@ export default function TasksPage() {
     }
   }
 
-  const handleAddTask = async () => {
-    if (!currentHousehold || !selectedTemplate) {
-      console.warn('Cannot add task: missing household or template', { 
-        hasHousehold: !!currentHousehold, 
-        hasTemplate: !!selectedTemplate,
-        template: selectedTemplate 
-      })
-      return
-    }
+  const resetAddTaskModalState = () => {
+    setAddTaskStep(1)
+    setSelectedCategory('')
+    setSelectedTemplate(null)
+    setSelectedPerformer('')
+    setSelectedThinker('')
+    setPerformerPoints(0)
+    setMentalLoadPoints(0)
+    setIsFrequentTask(false)
+    setFrequencyPerWeek(1)
+  }
+
+  const openAddTaskModal = () => {
+    resetAddTaskModalState()
+    setShowAddTaskModal(true)
+  }
+
+  const moveToAddTaskStep2 = () => {
+    if (!selectedTemplate) return
+    setPerformerPoints(selectedTemplate.default_points)
+    setMentalLoadPoints(selectedTemplate.default_mental_load_points)
+    setAddTaskStep(2)
+  }
+
+  const handleCreateTaskFromAddModal = async (closeAfterAdd: boolean) => {
+    if (!currentHousehold || !selectedTemplate || !selectedPerformer) return
 
     setError(null)
     setLoading(true)
     try {
-      console.log('Adding task:', { 
-        householdId: currentHousehold.id, 
-        templateId: selectedTemplate.id,
-        templateName: selectedTemplate.name 
-      })
-      const { error } = await createTask(
+      const { data: createdTask, error: taskError } = await createTask(
         currentHousehold.id,
         selectedTemplate.id,
-        null, // Use template defaults initially
-        null
+        performerPoints,
+        mentalLoadPoints
       )
-      if (error) throw error
+      if (taskError || !createdTask) throw taskError || new Error('Erreur lors de la création de la tâche')
+
+      const finalFrequency = isFrequentTask ? frequencyPerWeek : null
+      const thinkerId = selectedThinker === '' ? null : selectedThinker
+      const { error: assignmentError } = await createAssignment(
+        createdTask.id,
+        selectedPerformer,
+        thinkerId,
+        finalFrequency
+      )
+      if (assignmentError) throw assignmentError
 
       await loadData({ silent: true })
       showSuccessToast()
-      setShowAddTaskModal(false)
-      setSelectedTemplate(null)
-      setSelectedCategory('')
+
+      if (closeAfterAdd) {
+        setShowAddTaskModal(false)
+        resetAddTaskModalState()
+      } else {
+        setAddTaskStep(1)
+        setSelectedCategory('')
+        setSelectedTemplate(null)
+      }
     } catch (err: any) {
-      console.error('Error adding task:', err)
       setError(err.message || 'Erreur lors de la création de la tâche')
     } finally {
       setLoading(false)
@@ -421,37 +463,13 @@ export default function TasksPage() {
 
   const filteredTemplates = selectedCategory
     ? templates.filter(t => t.category === selectedCategory)
-    : templates
-
-  // Debug: log when category changes
-  useEffect(() => {
-    if (selectedCategory) {
-      console.log('🔍 Filtrage templates:')
-      console.log('  - Catégorie sélectionnée:', selectedCategory)
-      console.log('  - Templates totaux:', templates.length)
-      console.log('  - Templates filtrés:', filteredTemplates.length)
-      if (templates.length > 0) {
-        console.log('  - Catégories dans templates:', [...new Set(templates.map(t => t.category))])
-        console.log('  - Exemples de templates:', templates.slice(0, 3).map(t => ({ name: t.name, category: t.category })))
-      }
-      if (filteredTemplates.length > 0) {
-        console.log('  - Premiers templates filtrés:', filteredTemplates.slice(0, 3).map(t => t.name))
-      } else {
-        console.warn('  ⚠️ Aucun template trouvé pour la catégorie:', selectedCategory)
-      }
-    }
-  }, [selectedCategory, templates, filteredTemplates])
+    : []
 
   const sortedFilteredTemplatesForAddModal = useMemo(() => {
     return [...filteredTemplates].sort((a, b) =>
       translateTaskName(a.name).localeCompare(translateTaskName(b.name), 'fr')
     )
   }, [filteredTemplates])
-
-  // Debug: log when template is selected
-  useEffect(() => {
-    console.log('📌 Template sélectionné:', selectedTemplate ? { id: selectedTemplate.id, name: selectedTemplate.name } : null)
-  }, [selectedTemplate])
 
   if (householdLoading || loading) {
     return (
@@ -488,7 +506,7 @@ export default function TasksPage() {
         {/* Action Buttons */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <button
-            onClick={() => setShowAddTaskModal(true)}
+            onClick={openAddTaskModal}
             className="rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
           >
             + Ajouter une tâche
@@ -792,108 +810,256 @@ export default function TasksPage() {
 
         {/* Add Task Modal */}
         {showAddTaskModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-lg border border-[#E5E7EB] bg-white p-8">
-              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">Ajouter une tâche</h2>
-              
-              {/* Category Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                  Catégorie
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value as TaskCategory | '')
-                    setSelectedTemplate(null)
-                  }}
-                  className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                >
-                  <option value="">Toutes les catégories</option>
-                  {TASK_CATEGORIES_ALPHABETICAL_FR.map((key) => (
-                    <option key={key} value={key}>
-                      {translateCategory(key)}
-                    </option>
-                  ))}
-</select>
-              </div>
+          <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 p-4 pt-10 backdrop-blur-sm sm:items-center">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-[#E5E7EB] bg-white p-8">
+              <h2 className="mb-2 text-2xl font-bold text-[#1F2937]">Ajouter une tâche</h2>
+              <p className="mb-6 text-sm text-[#6B7280]">
+                Étape {addTaskStep}/2
+              </p>
 
-              {/* Template Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                  Tâche {selectedCategory && `(${translateCategory(selectedCategory)})`}
-                </label>
-                {filteredTemplates.length === 0 ? (
-                  <div className="text-sm text-[#6B7280] py-2">
-                    <p>
-                      {selectedCategory 
-                        ? `Aucune tâche disponible dans la catégorie "${translateCategory(selectedCategory)}".`
-                        : templates.length === 0
-                        ? 'Aucune tâche disponible. Vérifiez que les templates sont chargés.'
-                        : 'Sélectionnez une catégorie pour filtrer les tâches, ou choisissez directement une tâche ci-dessous.'}
+              {addTaskStep === 1 && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="mb-4 text-lg font-semibold text-[#1F2937]">
+                      Choisissez une catégorie et une tâche
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {TASK_CATEGORIES_ALPHABETICAL_FR.map((category) => {
+                        const isSelected = selectedCategory === category
+                        return (
+                          <button
+                            key={category}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(category)
+                              setSelectedTemplate(null)
+                            }}
+                            className={`rounded-lg border px-4 py-3 text-left transition-colors ${
+                              isSelected
+                                ? 'border-[#93C572] bg-[#93C572]/10'
+                                : 'border-[#E5E7EB] bg-white hover:bg-gray-50'
+                            }`}
+                          >
+                            <p className="mb-1 text-lg">{CATEGORY_EMOJIS[category]}</p>
+                            <p className="text-sm font-medium text-[#1F2937]">
+                              {translateCategory(category)}
+                            </p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-sm font-medium text-[#6B7280]">
+                      {selectedCategory
+                        ? `Tâches (${translateCategory(selectedCategory)})`
+                        : 'Sélectionnez d’abord une catégorie'}
                     </p>
-                    <p className="text-xs mt-1">
-                      Templates chargés: {templates.length} 
-                      {selectedCategory && ` | Catégorie sélectionnée: ${selectedCategory}`}
+                    {selectedCategory && sortedFilteredTemplatesForAddModal.length > 0 ? (
+                      <div className="space-y-2">
+                        {sortedFilteredTemplatesForAddModal.map((template) => {
+                          const isSelected = selectedTemplate?.id === template.id
+                          return (
+                            <button
+                              key={template.id}
+                              type="button"
+                              onClick={() => setSelectedTemplate(template)}
+                              className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                                isSelected
+                                  ? 'border-[#93C572] bg-[#93C572]/10 text-[#1F2937]'
+                                  : 'border-[#E5E7EB] bg-white text-[#1F2937] hover:bg-gray-50'
+                              }`}
+                            >
+                              {translateTaskName(template.name)}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-[#E5E7EB] bg-[#FAFAF8] px-4 py-3 text-sm text-[#6B7280]">
+                        {selectedCategory
+                          ? 'Aucune tâche disponible dans cette catégorie.'
+                          : 'Choisissez une catégorie pour afficher les tâches.'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddTaskModal(false)
+                        resetAddTaskModalState()
+                      }}
+                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={moveToAddTaskStep2}
+                      disabled={!selectedTemplate}
+                      className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Continuer
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {addTaskStep === 2 && selectedTemplate && (
+                <div className="space-y-5">
+                  <div className="rounded-lg border border-[#E5E7EB] bg-[#FAFAF8] p-4">
+                    <p className="text-xs text-[#6B7280]">Tâche sélectionnée</p>
+                    <p className="text-sm font-medium text-[#1F2937]">
+                      {translateTaskName(selectedTemplate.name)}
                     </p>
                   </div>
-                ) : (
-                  <select
-                    value={selectedTemplate ? String(selectedTemplate.id) : ''}
-                    onChange={(e) => {
-                      const selectedId = e.target.value
-                      if (!selectedId) {
-                        setSelectedTemplate(null)
-                        return
-                      }
-                      // Comparer avec String(t.id) car les IDs peuvent être des nombres dans la DB mais strings dans l'interface
-                      let template = sortedFilteredTemplatesForAddModal.find(t => String(t.id) === selectedId)
-                      if (!template) {
-                        template = templates.find(t => String(t.id) === selectedId)
-                      }
-                      if (template) {
-                        setSelectedTemplate(template)
-                        console.log('Template sélectionné:', template)
-                      } else {
-                        console.warn('Template non trouvé pour ID:', selectedId)
-                        console.warn('Templates disponibles:', templates.map(t => ({ id: t.id, name: t.name })))
-                        console.warn('Filtered templates:', filteredTemplates.map(t => ({ id: t.id, name: t.name })))
-                        setSelectedTemplate(null)
-                      }
-                    }}
-                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                  >
-                    <option value="">Sélectionnez une tâche</option>
-                    {sortedFilteredTemplatesForAddModal.map((template) => (
-                      <option key={template.id} value={String(template.id)}>
-                        {translateTaskName(template.name)}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
 
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddTaskModal(false)
-                    setSelectedCategory('')
-                    setSelectedTemplate(null)
-                  }}
-                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleAddTask}
-                  disabled={!selectedTemplate || loading}
-                  className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={!selectedTemplate ? 'Sélectionnez une tâche pour l\'ajouter' : ''}
-                >
-                  {loading ? 'Ajout...' : 'Ajouter'}
-                </button>
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
+                        Qui fait la tâche ? (réalisation) <span className="text-red-600">*</span>
+                      </label>
+                      <select
+                        value={selectedPerformer}
+                        onChange={(e) => setSelectedPerformer(e.target.value)}
+                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                      >
+                        <option value="">Sélectionnez un membre</option>
+                        {participants.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
+                        Points réalisation
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="10"
+                        value={performerPoints}
+                        onChange={(e) => setPerformerPoints(parseInt(e.target.value) || 0)}
+                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
+                        Qui pense à la tâche ? (charge mentale) <span className="font-normal text-[#6B7280]">(facultatif)</span>
+                      </label>
+                      <select
+                        value={selectedThinker}
+                        onChange={(e) => setSelectedThinker(e.target.value)}
+                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                      >
+                        <option value="">Personne</option>
+                        {participants.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
+                        Points charge mentale
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="10"
+                        value={mentalLoadPoints}
+                        onChange={(e) => setMentalLoadPoints(parseInt(e.target.value) || 0)}
+                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-3 block text-sm font-medium text-[#6B7280]">
+                      Fréquence
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex cursor-pointer items-center gap-3">
+                        <input
+                          type="radio"
+                          name="add-frequency"
+                          checked={!isFrequentTask}
+                          onChange={() => {
+                            setIsFrequentTask(false)
+                            setFrequencyPerWeek(1)
+                          }}
+                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
+                        />
+                        <span className="text-sm text-[#1F2937]">Tâche ponctuelle (1 fois)</span>
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-3">
+                        <input
+                          type="radio"
+                          name="add-frequency"
+                          checked={isFrequentTask}
+                          onChange={() => setIsFrequentTask(true)}
+                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
+                        />
+                        <span className="text-sm text-[#1F2937]">Tâche fréquente</span>
+                      </label>
+                      {isFrequentTask && (
+                        <div className="ml-7">
+                          <label className="mb-1 block text-xs text-[#6B7280]">Fréquence par semaine</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="14"
+                            value={frequencyPerWeek}
+                            onChange={(e) => setFrequencyPerWeek(parseInt(e.target.value) || 1)}
+                            className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setAddTaskStep(1)}
+                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
+                      >
+                        Retour
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateTaskFromAddModal(true)}
+                        disabled={!selectedPerformer || loading}
+                        className="rounded-lg bg-[#93C572] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {loading ? 'Ajout...' : 'Ajouter'}
+                      </button>
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => void handleCreateTaskFromAddModal(false)}
+                        disabled={!selectedPerformer || loading}
+                        className="text-sm font-medium text-[#6B7280] underline-offset-2 transition-colors hover:text-[#1F2937] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Valider et ajouter une tâche
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
