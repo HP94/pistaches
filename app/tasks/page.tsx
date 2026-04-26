@@ -1044,7 +1044,7 @@ export default function TasksPage() {
                         disabled={!selectedPerformer || loading}
                         className="rounded-lg bg-[#93C572] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {loading ? 'Ajout...' : 'Ajouter'}
+                        {loading ? 'Validation...' : 'Valider'}
                       </button>
                     </div>
                     <div className="mt-3 flex justify-end">
@@ -1052,7 +1052,7 @@ export default function TasksPage() {
                         type="button"
                         onClick={() => void handleCreateTaskFromAddModal(false)}
                         disabled={!selectedPerformer || loading}
-                        className="text-sm font-medium text-[#6B7280] underline-offset-2 transition-colors hover:text-[#1F2937] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Valider et ajouter une tâche
                       </button>
