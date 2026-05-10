@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { signOut } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
+import { AddToHomeScreenModal, usePwaStandaloneMode } from '@/components/AddToHomeScreenDrawer'
 import { LegalPageLinks } from '@/components/LegalPageLinks'
 import StatsConsentModal from '@/components/StatsConsentModal'
 
@@ -18,6 +19,8 @@ export default function ProfileMenu() {
   const [loading, setLoading] = useState(true)
   const [showMenu, setShowMenu] = useState(false)
   const [statsModalOpen, setStatsModalOpen] = useState(false)
+  const [installPwaOpen, setInstallPwaOpen] = useState(false)
+  const isPwaStandalone = usePwaStandaloneMode()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -67,6 +70,19 @@ export default function ProfileMenu() {
         Gérer mes consentements
       </button>
 
+      {!isPwaStandalone && (
+        <button
+          type="button"
+          onClick={() => {
+            setShowMenu(false)
+            setInstallPwaOpen(true)
+          }}
+          className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-left text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-50"
+        >
+          Ajouter Pistâches sur votre téléphone
+        </button>
+      )}
+
       <button
         type="button"
         onClick={() => void handleSignOut()}
@@ -86,6 +102,7 @@ export default function ProfileMenu() {
         onClose={() => setStatsModalOpen(false)}
         user={user}
       />
+      <AddToHomeScreenModal open={installPwaOpen} onClose={() => setInstallPwaOpen(false)} />
 
       {showMenu && (
         <div

@@ -10,24 +10,24 @@ Vous avez convenu de :
 ## ✅ Fichiers SQL à exécuter (dans l'ordre)
 
 ### 1. Migration multi-household (si pas déjà fait)
-**Fichier** : `supabase_migration_household_participants.sql`
+**Fichier** : `supabase/scripts/supabase_migration_household_participants.sql`
 - Ajoute `invitation_code` à `households`
 - Ajoute `user_id` à `participants`
 - Crée les indexes nécessaires
 
 ### 2. RLS Policies - Households
-**Fichier** : `supabase_fix_household_rls.sql`
+**Fichier** : `supabase/scripts/supabase_fix_household_rls.sql`
 - Permet aux utilisateurs authentifiés de lire les households (pour rejoindre par code)
 - Permet aux propriétaires de gérer leurs households
 
 ### 3. RLS Policies - Participants
-**Fichier** : `supabase_fix_participants_rls_no_recursion.sql`
+**Fichier** : `supabase/scripts/supabase_fix_participants_rls_no_recursion.sql`
 - Permet la lecture des participants dans les foyers
 - Permet l'insertion de participants (propriétaire ou création de son propre participant)
 - Évite la récursion infinie dans les policies
 
 ### 4. Setup Tasks & Analytics
-**Fichier** : `supabase_tasks_analytics_setup_corrected.sql`
+**Fichier** : `supabase/scripts/supabase_tasks_analytics_setup_corrected.sql`
 - Ajoute `performer_points` et `mental_load_points` à la table `tasks`
 - Crée la fonction `get_task_points()` pour obtenir les points effectifs
 - Crée la vue `task_template_analytics` pour les analytics

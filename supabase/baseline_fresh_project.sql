@@ -90,16 +90,16 @@ CREATE INDEX IF NOT EXISTS assignments_thinker_id_idx ON public.assignments (thi
 -- ---------------------------------------------------------------------------
 -- 3. Suite recommandée (dans l’éditeur SQL, fichiers du repo, dans cet ordre)
 -- ---------------------------------------------------------------------------
--- A) supabase_tasks_analytics_setup_corrected.sql (colonnes tasks si besoin + RPC get_task_points + vue analytics)
--- B) supabase_tasks_assignments_rls.sql
--- C) supabase_task_templates_rls.sql
--- D) supabase_fix_household_rls.sql
--- E) supabase_fix_participants_rls_no_recursion.sql (ou supabase_participants_update_rls_core3.sql selon la prod)
--- F) supabase_participant_claim_rls.sql
--- G) supabase_migration_TASKS_CATEGORIES_2026_1_enum.sql (optionnel : pet_care/travel déjà dans l’enum ci-dessus)
--- H) supabase_migration_TASKS_CATEGORIES_2026.sql (données templates à jour)
--- I) supabase_seed_task_templates.sql (seulement si tu n’exécutes pas H ou pour compléter)
+-- A) supabase/scripts/supabase_tasks_analytics_setup_corrected.sql (colonnes tasks si besoin + RPC get_task_points + vue analytics)
+-- B) supabase/scripts/supabase_tasks_assignments_rls.sql
+-- C) supabase/scripts/supabase_task_templates_rls.sql
+-- D) supabase/scripts/supabase_fix_household_rls.sql
+-- E) supabase/scripts/supabase_fix_participants_rls_no_recursion.sql (ou supabase_participants_update_rls_core3.sql selon la prod)
+-- F) supabase/scripts/supabase_participant_claim_rls.sql
+-- G) supabase/scripts/supabase_migration_TASKS_CATEGORIES_2026_1_enum.sql (optionnel : pet_care/travel déjà dans l’enum ci-dessus)
+-- H) supabase/scripts/supabase_migration_TASKS_CATEGORIES_2026.sql (données templates à jour)
+-- I) supabase/scripts/supabase_seed_task_templates.sql (seulement si tu n’exécutes pas H ou pour compléter)
 --
--- Évite sur une base neuve : supabase_fix_tasks_name_column.sql (nettoyage d’anciennes colonnes absentes ici).
+-- Évite sur une base neuve : supabase/scripts/supabase_fix_tasks_name_column.sql (nettoyage d’anciennes colonnes absentes ici).
 -- Les scripts RLS / analytics en fin de fichier peuvent contenir des GRANT ; sinon, accorder manuellement
 -- les droits SELECT/INSERT/UPDATE/DELETE sur public.* au rôle authenticated si besoin.

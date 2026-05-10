@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest",
+    "test:run": "vitest run",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "eslint-config-next": "^16.0.10",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.5"
   }
 }

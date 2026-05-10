@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase/client'
 import { getUserHouseholds, type Household } from '@/lib/supabase/households'
 import { pickHouseholdFromList, setStoredHouseholdId } from '@/lib/currentHouseholdStorage'
 import HouseholdSwitcher from '@/components/HouseholdSwitcher'
-import AddToHomeScreenDrawer from '@/components/AddToHomeScreenDrawer'
 
 export default function Home() {
   const router = useRouter()
@@ -134,8 +133,6 @@ export default function Home() {
             </button>
           </div>
         </div>
-
-        <AddToHomeScreenDrawer />
 
         {/* Quick Actions */}
         <div className="space-y-3">

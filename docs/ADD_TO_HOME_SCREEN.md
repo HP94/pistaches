@@ -4,10 +4,10 @@ L’application est une **Progressive Web App** (manifest : `app/manifest.ts`). 
 
 ## Interface utilisateur
 
-- Composant : `components/AddToHomeScreenDrawer.tsx`
-- CTA sur la page d’accueil : **« Ajouter cette app sur votre téléphone »**
+- Composants : `components/AddToHomeScreenDrawer.tsx` (`AddToHomeScreenModal`, `usePwaStandaloneMode`)
+- Entrée de menu profil : **« Ajouter Pistâches sur votre téléphone »** (entre consentements et déconnexion)
 - Comportement : tiroir depuis le bas sur mobile, fenêtre modale centrée sur grand écran
-- Le CTA est **masqué** si l’app est déjà ouverte en mode installé (`display-mode: standalone`)
+- L’entrée est **masquée** si l’app est déjà ouverte en mode installé (`display-mode: standalone`)
 
 ## Procédure documentée (Chrome · Android)
 
