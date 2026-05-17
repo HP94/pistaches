@@ -13,6 +13,15 @@ export interface Household {
   name: string
   invitation_code: string
   created_at: string
+  /** v3 : null tant que la sélection des tâches récurrentes (onboarding) n’est pas terminée. */
+  recurring_tasks_onboarding_completed_at?: string | null
+}
+
+/** Marque l’onboarding « tâches récurrentes » comme terminé (RPC, tout membre du foyer). */
+export async function markRecurringTasksOnboardingComplete(householdId: string) {
+  return supabase.rpc('v3_complete_recurring_onboarding', {
+    p_household_id: householdId,
+  })
 }
 
 /**

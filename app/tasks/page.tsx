@@ -1,1289 +1,204 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHousehold } from '@/lib/hooks/useHousehold'
-import { getTasks, createTask, updateTaskPoints, deleteTask, type TaskWithTemplate } from '@/lib/supabase/tasks'
-import {
-  getTaskTemplates,
-  type TaskCategory,
-  type TaskTemplate,
-} from '@/lib/supabase/taskTemplates'
-import { getAssignments, createAssignment, updateAssignment, deleteAssignment, deleteAllAssignmentsForHousehold, type AssignmentWithDetails } from '@/lib/supabase/assignments'
 import { getParticipants, type Participant } from '@/lib/supabase/participants'
-import { translateTaskName, translateCategory } from '@/lib/translations'
-import { ContextActionsMenu } from '@/components/ContextActionsMenu'
+import { getTaskTemplates, type TaskTemplate } from '@/lib/supabase/taskTemplates'
+import { getHouseholdFavorites, type HouseholdFavoriteWithTemplate } from '@/lib/supabase/householdFavorites'
+import { getDeclarationsForDate, type TaskDeclarationWithRelations } from '@/lib/supabase/taskDeclarations'
+import { translateTaskName } from '@/lib/translations'
+import {
+  CATEGORY_EMOJIS,
+  PERFORMER_NAME_CLASS,
+  THINKER_NAME_CLASS,
+} from '@/lib/taskPickerUi'
+import type { TaskCategory } from '@/lib/supabase/taskTemplates'
+import TaskDayPicker, { formatLocalDate } from '@/components/TaskDayPicker'
+import TaskDeclarationWizard from '@/components/TaskDeclarationWizard'
+import HouseholdFavoritesModal from '@/components/HouseholdFavoritesModal'
 import { SuccessToast, useSuccessToast } from '@/components/SuccessToast'
-
-const ALL_TASK_CATEGORIES: TaskCategory[] = [
-  'administrative',
-  'car_maintenance',
-  'cleaning',
-  'cooking',
-  'diy',
-  'laundry',
-  'other',
-  'parenting',
-  'pet_care',
-  'shopping',
-  'travel',
-]
-
-/** Ordre alphabétique des libellés FR (pour le select « Ajouter une tâche » ; « Toutes les catégories » reste séparé) */
-const TASK_CATEGORIES_ALPHABETICAL_FR = [...ALL_TASK_CATEGORIES].sort((a, b) =>
-  translateCategory(a).localeCompare(translateCategory(b), 'fr')
-)
-
-const CATEGORY_EMOJIS: Record<TaskCategory, string> = {
-  administrative: '🧾',
-  car_maintenance: '🚗',
-  cleaning: '🧹',
-  cooking: '🍳',
-  diy: '🛠️',
-  laundry: '🧺',
-  other: '✨',
-  parenting: '👨‍👩‍👧',
-  pet_care: '🐾',
-  shopping: '🛍️',
-  travel: '🧳',
-}
 
 export default function TasksPage() {
   const router = useRouter()
   const { currentHousehold, loading: householdLoading } = useHousehold()
-  
-  const [tasks, setTasks] = useState<TaskWithTemplate[]>([])
-  const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([])
+
   const [participants, setParticipants] = useState<Participant[]>([])
   const [templates, setTemplates] = useState<TaskTemplate[]>([])
+  const [favorites, setFavorites] = useState<HouseholdFavoriteWithTemplate[]>([])
+  const [declarations, setDeclarations] = useState<TaskDeclarationWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  // Modal states
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false)
-  const [showEditPointsModal, setShowEditPointsModal] = useState(false)
-  const [showAssignModal, setShowAssignModal] = useState(false)
-  const [addTaskStep, setAddTaskStep] = useState<1 | 2>(1)
-  
-  // Form states
-  const [selectedCategory, setSelectedCategory] = useState<TaskCategory | ''>('')
-  const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null)
-  const [editingTask, setEditingTask] = useState<TaskWithTemplate | null>(null)
-  const [assigningTask, setAssigningTask] = useState<TaskWithTemplate | null>(null)
-  const [performerPoints, setPerformerPoints] = useState<number>(0)
-  const [mentalLoadPoints, setMentalLoadPoints] = useState<number>(0)
-  
-  // Assignment form states
-  const [selectedPerformer, setSelectedPerformer] = useState<string>('')
-  const [selectedThinker, setSelectedThinker] = useState<string>('')
-  const [isFrequentTask, setIsFrequentTask] = useState<boolean>(false)
-  const [frequencyPerWeek, setFrequencyPerWeek] = useState<number>(1)
-  const [editingAssignment, setEditingAssignment] = useState<AssignmentWithDetails | null>(null)
-  const [contextMenuKey, setContextMenuKey] = useState<string | null>(null)
-  const [sortOrder, setSortOrder] = useState<'none' | 'oldest' | 'newest'>('none')
-  const [showActionsMenu, setShowActionsMenu] = useState(false)
-  const [showDeleteAssignmentsModal, setShowDeleteAssignmentsModal] = useState(false)
+
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false)
   const { toastMessage, showSuccessToast } = useSuccessToast()
+
+  const hasDeclarations = declarations.length > 0
+
+  const loadData = useCallback(async () => {
+    if (!currentHousehold) return
+    setLoading(true)
+    setError(null)
+    try {
+      const [pRes, tRes, fRes, dRes] = await Promise.all([
+        getParticipants(currentHousehold.id),
+        getTaskTemplates(),
+        getHouseholdFavorites(currentHousehold.id),
+        selectedDate
+          ? getDeclarationsForDate(currentHousehold.id, selectedDate)
+          : Promise.resolve({ data: [], error: null }),
+      ])
+      if (pRes.error) throw pRes.error
+      if (tRes.error) throw tRes.error
+      if (fRes.error) throw fRes.error
+      if (dRes.error) throw dRes.error
+      setParticipants(pRes.data || [])
+      setTemplates(tRes.data || [])
+      setFavorites(fRes.data || [])
+      setDeclarations((dRes.data as TaskDeclarationWithRelations[]) || [])
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erreur de chargement')
+    } finally {
+      setLoading(false)
+    }
+  }, [currentHousehold, selectedDate])
 
   useEffect(() => {
     if (!householdLoading && !currentHousehold) {
       router.push('/select-household')
     } else if (currentHousehold) {
-      loadData()
+      void loadData()
     }
-  }, [currentHousehold, householdLoading, router])
+  }, [currentHousehold, householdLoading, router, loadData])
 
-  const loadData = async (opts?: { silent?: boolean }) => {
-    if (!currentHousehold) return
-
-    if (!opts?.silent) setLoading(true)
-    setError(null)
-    try {
-      // Load all data in parallel
-      const [tasksResult, assignmentsResult, participantsResult, templatesResult] = await Promise.all([
-        getTasks(currentHousehold.id),
-        getAssignments(currentHousehold.id),
-        getParticipants(currentHousehold.id),
-        getTaskTemplates(),
-      ])
-
-      if (tasksResult.error) throw tasksResult.error
-      if (assignmentsResult.error) throw assignmentsResult.error
-      if (participantsResult.error) throw participantsResult.error
-      if (templatesResult.error) throw templatesResult.error
-
-      setTasks(tasksResult.data || [])
-      setAssignments(assignmentsResult.data || [])
-      setParticipants(participantsResult.data || [])
-      setTemplates(templatesResult.data || [])
-      
-      // Debug: log templates
-      console.log('Templates chargés:', templatesResult.data?.length || 0)
-      if (templatesResult.data && templatesResult.data.length > 0) {
-        console.log('Premier template:', templatesResult.data[0])
-        console.log('Catégories disponibles:', [...new Set(templatesResult.data.map(t => t.category))])
-      } else {
-        console.warn('Aucun template chargé! Vérifiez que la table task_templates est remplie et que les RLS policies permettent la lecture.')
-      }
-      
-      // Debug: log templates
-      console.log('Templates chargés:', templatesResult.data?.length || 0)
-      if (templatesResult.data && templatesResult.data.length > 0) {
-        console.log('Premier template:', templatesResult.data[0])
-        console.log('Catégories disponibles:', [...new Set(templatesResult.data.map(t => t.category))])
-      }
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement des données')
-    } finally {
-      if (!opts?.silent) setLoading(false)
-    }
+  const openWizard = () => {
+    if (!selectedDate) return
+    setWizardOpen(true)
   }
 
-  const resetAddTaskModalState = () => {
-    setAddTaskStep(1)
-    setSelectedCategory('')
-    setSelectedTemplate(null)
-    setSelectedPerformer('')
-    setSelectedThinker('')
-    setPerformerPoints(0)
-    setMentalLoadPoints(0)
-    setIsFrequentTask(false)
-    setFrequencyPerWeek(1)
+  const afterWizard = () => {
+    void loadData()
+    showSuccessToast()
   }
 
-  const openAddTaskModal = () => {
-    resetAddTaskModalState()
-    setShowAddTaskModal(true)
+  const afterFavoritesSaved = () => {
+    void loadData()
+    showSuccessToast()
   }
-
-  const moveToAddTaskStep2 = () => {
-    if (!selectedTemplate) return
-    setPerformerPoints(selectedTemplate.default_points)
-    setMentalLoadPoints(selectedTemplate.default_mental_load_points)
-    setAddTaskStep(2)
-  }
-
-  const handleCreateTaskFromAddModal = async (closeAfterAdd: boolean) => {
-    if (!currentHousehold || !selectedTemplate || !selectedPerformer) return
-
-    setError(null)
-    setLoading(true)
-    try {
-      const { data: createdTask, error: taskError } = await createTask(
-        currentHousehold.id,
-        selectedTemplate.id,
-        performerPoints,
-        mentalLoadPoints
-      )
-      if (taskError || !createdTask) throw taskError || new Error('Erreur lors de la création de la tâche')
-
-      const finalFrequency = isFrequentTask ? frequencyPerWeek : null
-      const thinkerId = selectedThinker === '' ? null : selectedThinker
-      const { error: assignmentError } = await createAssignment(
-        createdTask.id,
-        selectedPerformer,
-        thinkerId,
-        finalFrequency
-      )
-      if (assignmentError) throw assignmentError
-
-      await loadData({ silent: true })
-      showSuccessToast()
-
-      if (closeAfterAdd) {
-        setShowAddTaskModal(false)
-        resetAddTaskModalState()
-      } else {
-        setAddTaskStep(1)
-        setSelectedCategory('')
-        setSelectedTemplate(null)
-      }
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la création de la tâche')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleUpdatePoints = async () => {
-    if (!editingTask) return
-
-    setError(null)
-    try {
-      const { error } = await updateTaskPoints(
-        editingTask.id,
-        performerPoints || null,
-        mentalLoadPoints || null
-      )
-      if (error) throw error
-
-      await loadData({ silent: true })
-      showSuccessToast()
-      setShowEditPointsModal(false)
-      setEditingTask(null)
-      setPerformerPoints(0)
-      setMentalLoadPoints(0)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la mise à jour des points')
-    }
-  }
-
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) return
-
-    setError(null)
-    try {
-      const { error } = await deleteTask(taskId)
-      if (error) throw error
-
-      await loadData({ silent: true })
-      showSuccessToast()
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la suppression')
-    }
-  }
-
-  const handleCreateAssignment = async () => {
-    if (!assigningTask || !selectedPerformer) return
-
-    setError(null)
-    setLoading(true)
-    try {
-      // null for one-time tasks, number for frequent tasks
-      const finalFrequency = isFrequentTask ? frequencyPerWeek : null
-      const thinkerId = selectedThinker === '' ? null : selectedThinker
-      const { error } = await createAssignment(
-        assigningTask.id,
-        selectedPerformer,
-        thinkerId,
-        finalFrequency
-      )
-      if (error) throw error
-
-      await loadData({ silent: true })
-      showSuccessToast()
-      setShowAssignModal(false)
-      setAssigningTask(null)
-      setEditingAssignment(null)
-      setSelectedPerformer('')
-      setSelectedThinker('')
-      setIsFrequentTask(false)
-      setFrequencyPerWeek(1)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la création de l\'assignation')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleUpdateAssignment = async () => {
-    if (!editingAssignment || !selectedPerformer) return
-
-    setError(null)
-    setLoading(true)
-    try {
-      // null for one-time tasks, number for frequent tasks
-      const finalFrequency = isFrequentTask ? frequencyPerWeek : null
-      const thinkerId = selectedThinker === '' ? null : selectedThinker
-      const { error } = await updateAssignment(
-        editingAssignment.id,
-        selectedPerformer,
-        thinkerId,
-        finalFrequency
-      )
-      if (error) throw error
-
-      await loadData({ silent: true })
-      showSuccessToast()
-      setShowAssignModal(false)
-      setEditingAssignment(null)
-      setAssigningTask(null)
-      setSelectedPerformer('')
-      setSelectedThinker('')
-      setIsFrequentTask(false)
-      setFrequencyPerWeek(1)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la mise à jour de l\'assignation')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDeleteAssignment = async (assignmentId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette assignation ?')) return
-
-    setError(null)
-    try {
-      const { error } = await deleteAssignment(assignmentId)
-      if (error) throw error
-
-      await loadData({ silent: true })
-      showSuccessToast()
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la suppression')
-    }
-  }
-
-  const handleResetAllAssignments = async () => {
-    if (!currentHousehold) return
-
-    setError(null)
-    setLoading(true)
-    try {
-      const { error } = await deleteAllAssignmentsForHousehold(currentHousehold.id)
-      if (error) throw error
-
-      await loadData({ silent: true })
-      showSuccessToast()
-      setShowDeleteAssignmentsModal(false)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la remise à zéro des assignations')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const year = String(date.getFullYear()).slice(-2)
-    return `${day}/${month}/${year}`
-  }
-
-  const openEditPointsModal = (task: TaskWithTemplate) => {
-    setEditingTask(task)
-    const effectivePerformerPoints = task.performer_points ?? task.task_templates.default_points
-    const effectiveMentalLoadPoints = task.mental_load_points ?? task.task_templates.default_mental_load_points
-    setPerformerPoints(effectivePerformerPoints)
-    setMentalLoadPoints(effectiveMentalLoadPoints)
-    setShowEditPointsModal(true)
-  }
-
-  const openAssignModal = (task: TaskWithTemplate, assignment: AssignmentWithDetails | null = null) => {
-    setAssigningTask(task)
-    setEditingAssignment(assignment)
-    if (assignment) {
-      setSelectedPerformer(assignment.performer_id || '')
-      setSelectedThinker(assignment.thinker_id || '')
-      setIsFrequentTask(assignment.frequency_per_week !== null && assignment.frequency_per_week > 1)
-      setFrequencyPerWeek(assignment.frequency_per_week || 1)
-    } else {
-      setSelectedPerformer('')
-      setSelectedThinker('')
-      setIsFrequentTask(false)
-      setFrequencyPerWeek(1)
-    }
-    setShowAssignModal(true)
-  }
-
-  const getAssignmentsForTask = (taskId: string) => {
-    return assignments.filter(a => a.task_id === taskId)
-  }
-
-  const getEffectivePoints = (task: TaskWithTemplate) => {
-    return {
-      realisation: task.performer_points ?? task.task_templates.default_points,
-      mentalLoad: task.mental_load_points ?? task.task_templates.default_mental_load_points,
-    }
-  }
-
-  // Get tasks sorted by assignment date if sort is active
-  const getSortedTasks = () => {
-    if (sortOrder === 'none') {
-      return tasks
-    }
-
-    // Separate tasks with and without assignments
-    const tasksWithAssignments: Array<{ task: TaskWithTemplate; date: Date }> = []
-    const tasksWithoutAssignments: TaskWithTemplate[] = []
-
-    tasks.forEach(task => {
-      const taskAssignments = getAssignmentsForTask(task.id)
-      if (taskAssignments.length === 0) {
-        // No assignment, will be put at the end
-        tasksWithoutAssignments.push(task)
-      } else {
-        // Get the most recent assignment date
-        const dates = taskAssignments.map(a => new Date(a.created_at))
-        const mostRecentDate = new Date(Math.max(...dates.map(d => d.getTime())))
-        tasksWithAssignments.push({ task, date: mostRecentDate })
-      }
-    })
-
-    // Sort only tasks with assignments by date
-    tasksWithAssignments.sort((a, b) => {
-      if (sortOrder === 'newest') {
-        return b.date.getTime() - a.date.getTime() // Newest first
-      } else {
-        return a.date.getTime() - b.date.getTime() // Oldest first
-      }
-    })
-
-    // Return sorted tasks with assignments first, then tasks without assignments at the end
-    return [
-      ...tasksWithAssignments.map(t => t.task),
-      ...tasksWithoutAssignments
-    ]
-  }
-
-  const sortedTasks = getSortedTasks()
-
-  const handleToggleSortOrder = () => {
-    if (sortOrder === 'oldest') {
-      setSortOrder('newest')
-    } else if (sortOrder === 'newest') {
-      setSortOrder('oldest')
-    }
-  }
-
-  const sortedCategoryEntries = useMemo(() => {
-    if (sortOrder !== 'none') return [] as [string, TaskWithTemplate[]][]
-    const grouped = tasks.reduce((acc, task) => {
-      const category = task.task_templates.category
-      if (!acc[category]) acc[category] = []
-      acc[category].push(task)
-      return acc
-    }, {} as Record<string, TaskWithTemplate[]>)
-
-    return Object.entries(grouped)
-      .map(([category, categoryTasks]) => [
-        category,
-        [...categoryTasks].sort((a, b) =>
-          translateTaskName(a.task_templates.name).localeCompare(
-            translateTaskName(b.task_templates.name),
-            'fr'
-          )
-        ),
-      ] as [string, TaskWithTemplate[]])
-      .sort(([catA], [catB]) =>
-        translateCategory(catA).localeCompare(translateCategory(catB), 'fr')
-      )
-  }, [tasks, sortOrder])
-
-  const filteredTemplates = selectedCategory
-    ? templates.filter(t => t.category === selectedCategory)
-    : []
-
-  const sortedFilteredTemplatesForAddModal = useMemo(() => {
-    return [...filteredTemplates].sort((a, b) =>
-      translateTaskName(a.name).localeCompare(translateTaskName(b.name), 'fr')
-    )
-  }, [filteredTemplates])
 
   if (householdLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#FAFAF8] px-6 py-12">
-        <p className="text-[#6B7280]">Chargement...</p>
-      </div>
+      <div className="flex min-h-[40vh] items-center justify-center text-[#6B7280]">Chargement…</div>
     )
   }
-
 
   if (!currentHousehold) {
     return null
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] px-6 py-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#1F2937]">
-            Tâches du foyer<br />
-            &quot;{currentHousehold.name}&quot;
-          </h1>
-          <p className="mt-2 text-[#6B7280]">
-            Gérez les tâches ménagères et leurs assignations
-          </p>
-        </div>
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 pb-12">
+      <h1 className="text-2xl font-bold text-[#1F2937]">Tâches</h1>
+      <p className="text-sm text-[#6B7280]">
+        Choisissez un jour, puis déclarez les tâches réalisées (favoris en priorité).
+      </p>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600 mb-4">
-            {error}
-          </div>
-        )}
+      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-        {/* Action Buttons */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <button
-            onClick={openAddTaskModal}
-            className="rounded-lg bg-[#93C572] px-6 py-3 font-medium text-white transition-colors hover:bg-[#7bad5c]"
-          >
-            + Ajouter une tâche
-          </button>
-          
-          {/* Actions Menu - Aligned to right */}
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowActionsMenu(!showActionsMenu)
-              }}
-              className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-3 py-2 text-lg text-[#1F2937] transition-colors hover:bg-gray-100"
-              aria-label="Menu actions"
-            >
-              ···
-            </button>
+      <TaskDayPicker value={selectedDate} onChange={setSelectedDate} />
 
-            {/* Actions Menu Dropdown */}
-            {showActionsMenu && (
-              <>
-                {/* Backdrop */}
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowActionsMenu(false)}
-                />
-                
-                {/* Menu */}
-                <div className="absolute right-0 top-full mt-2 z-50 w-56 rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm shadow-lg">
-                  <div className="py-2">
-                    <button
-                      onClick={() => {
-                        setSortOrder(sortOrder === 'none' ? 'oldest' : 'none')
-                        setShowActionsMenu(false)
-                      }}
-                      className="w-full px-4 py-2 text-left text-sm text-[#1F2937] hover:bg-gray-100 transition-colors"
-                    >
-                      {sortOrder === 'none' ? 'Trier par date d\'assignation' : 'Ne plus trier'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowDeleteAssignmentsModal(true)
-                        setShowActionsMenu(false)
-                      }}
-                      disabled={loading || assignments.length === 0}
-                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Supprimer les assignations
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Sort Indicator */}
-        {sortOrder !== 'none' && (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-[#E5E7EB] bg-white px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-[#6B7280]">
-                {sortOrder === 'oldest' ? 'Du plus ancien au plus récent' : 'Du plus récent au plus ancien'}
-              </span>
-              <button
-                onClick={handleToggleSortOrder}
-                className="text-sm text-[#8B5CF6] hover:text-[#7c3aed] transition-colors underline"
-              >
-                {sortOrder === 'oldest' ? 'Voir les plus récentes' : 'Voir les plus anciennes'}
-              </button>
-            </div>
-            <button
-              onClick={() => setSortOrder('none')}
-              className="text-[#6B7280] hover:text-[#1F2937] transition-colors"
-              aria-label="Fermer le tri"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Tasks List by Category or Sorted */}
-        {sortOrder === 'none' ? (
-          sortedCategoryEntries.length === 0 ? (
-            <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
-              <p className="text-[#6B7280]">Aucune tâche dans ce foyer. Ajoutez-en une !</p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {sortedCategoryEntries.map(([category, categoryTasks]) => (
-                <div key={category} className="rounded-lg border border-[#E5E7EB] bg-white p-6">
-                  <h2 className="mb-4 text-xl font-semibold text-[#1F2937]">
-                    {translateCategory(category)}
-                  </h2>
-                  <div className="space-y-4">
-                    {categoryTasks.map((task) => {
-                      const taskAssignments = getAssignmentsForTask(task.id)
-                      const points = getEffectivePoints(task)
-                      return (
-                        <div
-                          key={task.id}
-                          className="rounded-lg border border-[#E5E7EB] bg-white p-6"
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-[#1F2937] mb-3">
-                                {translateTaskName(task.task_templates.name)}
-                              </h3>
-                              <div className="flex flex-col gap-1 text-sm text-[#6B7280]">
-                                <span>Réalisation : {points.realisation} pts</span>
-                                <span>Charge mentale : {points.mentalLoad} pts</span>
-                              </div>
-                            </div>
-                            <div className="ml-4 shrink-0">
-                              <ContextActionsMenu
-                                menuKey={`task:${task.id}`}
-                                openMenuKey={contextMenuKey}
-                                onOpenMenuKeyChange={setContextMenuKey}
-                                items={[
-                                  {
-                                    label: 'Modifier les points',
-                                    onClick: () => openEditPointsModal(task),
-                                  },
-                                  {
-                                    label: 'Assigner à un membre',
-                                    onClick: () => openAssignModal(task),
-                                  },
-                                  {
-                                    label: 'Supprimer',
-                                    onClick: () => handleDeleteTask(task.id),
-                                    variant: 'danger',
-                                  },
-                                ]}
-                              />
-                            </div>
-                          </div>
-                          
-                          {/* Assignments List - Full Width */}
-                          {taskAssignments.length > 0 && (
-                            <div className="mt-8 space-y-5">
-                              <p className="text-sm font-medium text-[#6B7280] mb-5">Assignations :</p>
-                              {taskAssignments.map((assignment) => (
-                                <div
-                                  key={assignment.id}
-                                  className="rounded border border-[#E5E7EB] bg-white p-6 w-full"
-                                >
-                                  <div className="flex items-center justify-between gap-[5px] mb-6">
-                                    <span className="text-sm text-[#6B7280]">
-                                      {assignment.frequency_per_week === null
-                                        ? 'Ponctuelle'
-                                        : assignment.frequency_per_week > 1
-                                        ? `${assignment.frequency_per_week}x/semaine`
-                                        : '1x/semaine'}
-                                    </span>
-                                    <ContextActionsMenu
-                                      menuKey={`asg:${assignment.id}`}
-                                      openMenuKey={contextMenuKey}
-                                      onOpenMenuKeyChange={setContextMenuKey}
-                                      triggerAriaLabel="Menu assignation"
-                                      items={[
-                                        {
-                                          label: 'Modifier',
-                                          onClick: () => openAssignModal(task, assignment),
-                                        },
-                                        {
-                                          label: 'Supprimer',
-                                          onClick: () => handleDeleteAssignment(assignment.id),
-                                          variant: 'danger',
-                                        },
-                                      ]}
-                                    />
-                                  </div>
-                                  <div className="space-y-4 text-sm">
-                                    <p className="text-[#6B7280]">
-                                      Fait par : {assignment.performers?.name || 'Non assigné'}
-                                    </p>
-                                    <p className="text-[#6B7280]">
-                                      Pensé par : {assignment.thinkers?.name || 'Non assigné'}
-                                    </p>
-                                    <p className="text-xs text-[#6B7280]">
-                                      Assigné le {formatDate(assignment.created_at)}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        ) : (
-          // Sorted tasks (no categories)
-          sortedTasks.length === 0 ? (
-            <div className="rounded-lg border border-[#E5E7EB] bg-white p-8 text-center">
-              <p className="text-[#6B7280]">Aucune tâche dans ce foyer. Ajoutez-en une !</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {sortedTasks.map((task) => {
-                    const taskAssignments = getAssignmentsForTask(task.id)
-                    const points = getEffectivePoints(task)
-                    return (
-                      <div
-                        key={task.id}
-                        className="rounded-lg border border-[#E5E7EB] bg-white p-6"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-[#1F2937] mb-3">
-                              {translateTaskName(task.task_templates.name)}
-                            </h3>
-                            <div className="flex flex-col gap-1 text-sm text-[#6B7280]">
-                              <span>Réalisation : {points.realisation} pts</span>
-                              <span>Charge mentale : {points.mentalLoad} pts</span>
-                            </div>
-                          </div>
-                          <div className="ml-4 shrink-0">
-                            <ContextActionsMenu
-                              menuKey={`task:${task.id}`}
-                              openMenuKey={contextMenuKey}
-                              onOpenMenuKeyChange={setContextMenuKey}
-                              items={[
-                                {
-                                  label: 'Modifier les points',
-                                  onClick: () => openEditPointsModal(task),
-                                },
-                                {
-                                  label: 'Assigner à un membre',
-                                  onClick: () => openAssignModal(task),
-                                },
-                                {
-                                  label: 'Supprimer',
-                                  onClick: () => handleDeleteTask(task.id),
-                                  variant: 'danger',
-                                },
-                              ]}
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Assignments List - Full Width */}
-                        {taskAssignments.length > 0 && (
-                          <div className="mt-8 space-y-5">
-                            <p className="text-sm font-medium text-[#6B7280] mb-5">Assignations :</p>
-                            {taskAssignments.map((assignment) => (
-                              <div
-                                key={assignment.id}
-                                className="rounded border border-[#E5E7EB] bg-white p-6 w-full"
-                              >
-                                <div className="flex items-center justify-between gap-[5px] mb-6">
-                                  <span className="text-sm text-[#6B7280]">
-                                    {assignment.frequency_per_week === null
-                                      ? 'Ponctuelle'
-                                      : assignment.frequency_per_week > 1
-                                      ? `${assignment.frequency_per_week}x/semaine`
-                                      : '1x/semaine'}
-                                  </span>
-                                  <ContextActionsMenu
-                                    menuKey={`asg:${assignment.id}`}
-                                    openMenuKey={contextMenuKey}
-                                    onOpenMenuKeyChange={setContextMenuKey}
-                                    triggerAriaLabel="Menu assignation"
-                                    items={[
-                                      {
-                                        label: 'Modifier',
-                                        onClick: () => openAssignModal(task, assignment),
-                                      },
-                                      {
-                                        label: 'Supprimer',
-                                        onClick: () => handleDeleteAssignment(assignment.id),
-                                        variant: 'danger',
-                                      },
-                                    ]}
-                                  />
-                                </div>
-                                <div className="space-y-4 text-sm">
-                                  <p className="text-[#6B7280]">
-                                    Fait par : {assignment.performers?.name || 'Non assigné'}
-                                  </p>
-                                  <p className="text-[#6B7280]">
-                                    Pensé par : {assignment.thinkers?.name || 'Non assigné'}
-                                  </p>
-                                  <p className="text-xs text-[#6B7280]">
-                                    Assigné le {formatDate(assignment.created_at)}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-            </div>
-          )
-        )}
-
-        {/* Add Task Modal */}
-        {showAddTaskModal && (
-          <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 p-4 pt-10 backdrop-blur-sm sm:items-center">
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-[#E5E7EB] bg-white p-8">
-              <h2 className="mb-2 text-2xl font-bold text-[#1F2937]">Ajouter une tâche</h2>
-              <p className="mb-6 text-sm text-[#6B7280]">
-                Étape {addTaskStep}/2
-              </p>
-
-              {addTaskStep === 1 && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="mb-4 text-lg font-semibold text-[#1F2937]">
-                      Choisissez une catégorie et une tâche
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {TASK_CATEGORIES_ALPHABETICAL_FR.map((category) => {
-                        const isSelected = selectedCategory === category
-                        return (
-                          <button
-                            key={category}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(category)
-                              setSelectedTemplate(null)
-                            }}
-                            className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                              isSelected
-                                ? 'border-[#93C572] bg-[#93C572]/10'
-                                : 'border-[#E5E7EB] bg-white hover:bg-gray-50'
-                            }`}
-                          >
-                            <p className="mb-1 text-lg">{CATEGORY_EMOJIS[category]}</p>
-                            <p className="text-sm font-medium text-[#1F2937]">
-                              {translateCategory(category)}
-                            </p>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="mb-3 text-sm font-medium text-[#6B7280]">
-                      {selectedCategory
-                        ? `Tâches (${translateCategory(selectedCategory)})`
-                        : 'Sélectionnez d’abord une catégorie'}
-                    </p>
-                    {selectedCategory && sortedFilteredTemplatesForAddModal.length > 0 ? (
-                      <div className="space-y-2">
-                        {sortedFilteredTemplatesForAddModal.map((template) => {
-                          const isSelected = selectedTemplate?.id === template.id
-                          return (
-                            <button
-                              key={template.id}
-                              type="button"
-                              onClick={() => setSelectedTemplate(template)}
-                              className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
-                                isSelected
-                                  ? 'border-[#93C572] bg-[#93C572]/10 text-[#1F2937]'
-                                  : 'border-[#E5E7EB] bg-white text-[#1F2937] hover:bg-gray-50'
-                              }`}
-                            >
-                              {translateTaskName(template.name)}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-[#E5E7EB] bg-[#FAFAF8] px-4 py-3 text-sm text-[#6B7280]">
-                        {selectedCategory
-                          ? 'Aucune tâche disponible dans cette catégorie.'
-                          : 'Choisissez une catégorie pour afficher les tâches.'}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end gap-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddTaskModal(false)
-                        resetAddTaskModalState()
-                      }}
-                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={moveToAddTaskStep2}
-                      disabled={!selectedTemplate}
-                      className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Continuer
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {addTaskStep === 2 && selectedTemplate && (
-                <div className="space-y-5">
-                  <div className="rounded-lg border border-[#E5E7EB] bg-[#FAFAF8] p-4">
-                    <p className="text-xs text-[#6B7280]">Tâche sélectionnée</p>
-                    <p className="text-sm font-medium text-[#1F2937]">
-                      {translateTaskName(selectedTemplate.name)}
-                    </p>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
-                        Qui fait la tâche ? (réalisation) <span className="text-red-600">*</span>
-                      </label>
-                      <select
-                        value={selectedPerformer}
-                        onChange={(e) => setSelectedPerformer(e.target.value)}
-                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                      >
-                        <option value="">Sélectionnez un membre</option>
-                        {participants.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
-                        Points réalisation
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="10"
-                        value={performerPoints}
-                        onChange={(e) => setPerformerPoints(parseInt(e.target.value) || 0)}
-                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
-                        Qui pense à la tâche ? (charge mentale) <span className="font-normal text-[#6B7280]">(facultatif)</span>
-                      </label>
-                      <select
-                        value={selectedThinker}
-                        onChange={(e) => setSelectedThinker(e.target.value)}
-                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                      >
-                        <option value="">Personne</option>
-                        {participants.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[#6B7280]">
-                        Points charge mentale
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="10"
-                        value={mentalLoadPoints}
-                        onChange={(e) => setMentalLoadPoints(parseInt(e.target.value) || 0)}
-                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-3 block text-sm font-medium text-[#6B7280]">
-                      Fréquence
-                    </label>
-                    <div className="space-y-3">
-                      <label className="flex cursor-pointer items-center gap-3">
-                        <input
-                          type="radio"
-                          name="add-frequency"
-                          checked={!isFrequentTask}
-                          onChange={() => {
-                            setIsFrequentTask(false)
-                            setFrequencyPerWeek(1)
-                          }}
-                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
-                        />
-                        <span className="text-sm text-[#1F2937]">Tâche ponctuelle (1 fois)</span>
-                      </label>
-                      <label className="flex cursor-pointer items-center gap-3">
-                        <input
-                          type="radio"
-                          name="add-frequency"
-                          checked={isFrequentTask}
-                          onChange={() => setIsFrequentTask(true)}
-                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
-                        />
-                        <span className="text-sm text-[#1F2937]">Tâche fréquente</span>
-                      </label>
-                      {isFrequentTask && (
-                        <div className="ml-7">
-                          <label className="mb-1 block text-xs text-[#6B7280]">Fréquence par semaine</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="14"
-                            value={frequencyPerWeek}
-                            onChange={(e) => setFrequencyPerWeek(parseInt(e.target.value) || 1)}
-                            className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between gap-4">
-                      <button
-                        type="button"
-                        onClick={() => setAddTaskStep(1)}
-                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                      >
-                        Retour
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleCreateTaskFromAddModal(true)}
-                        disabled={!selectedPerformer || loading}
-                        className="rounded-lg bg-[#93C572] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {loading ? 'Validation...' : 'Valider'}
-                      </button>
-                    </div>
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => void handleCreateTaskFromAddModal(false)}
-                        disabled={!selectedPerformer || loading}
-                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Valider et ajouter une tâche
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Edit Points Modal */}
-        {showEditPointsModal && editingTask && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg border border-[#E5E7EB] bg-white p-8">
-              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">
-                Modifier les points - {translateTaskName(editingTask.task_templates.name)}
-              </h2>
-              
-              <div className="mb-4">
-                <p className="mb-2 text-sm text-[#6B7280]">
-                  Points par défaut : {editingTask.task_templates.default_points} (réalisation), {editingTask.task_templates.default_mental_load_points} (charge mentale)
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                    Points réalisation (0-100, par pas de 10)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="10"
-                    value={performerPoints}
-                    onChange={(e) => setPerformerPoints(parseInt(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                    Points charge mentale (0-100, par pas de 10)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="10"
-                    value={mentalLoadPoints}
-                    onChange={(e) => setMentalLoadPoints(parseInt(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditPointsModal(false)
-                    setEditingTask(null)
-                  }}
-                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleUpdatePoints}
-                  className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c]"
-                >
-                  Sauvegarder
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Assign Task Modal */}
-        {showAssignModal && assigningTask && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg border border-[#E5E7EB] bg-white p-8">
-              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">
-                {editingAssignment ? 'Modifier l\'assignation' : 'Assigner'} - {translateTaskName(assigningTask.task_templates.name)}
-              </h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                    Qui fait la tâche ? (réalisation) <span className="text-red-600">*</span>
-                  </label>
-                  <select
-                    value={selectedPerformer}
-                    onChange={(e) => setSelectedPerformer(e.target.value)}
-                    required
-                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                  >
-                    <option value="">Sélectionnez un membre</option>
-                    {participants.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                    Qui pense à la tâche ? (charge mentale){' '}
-                    <span className="text-[#6B7280] font-normal">(facultatif)</span>
-                  </label>
-                  <select
-                    value={selectedThinker}
-                    onChange={(e) => setSelectedThinker(e.target.value)}
-                    className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                  >
-                    <option value="">Personne</option>
-                    {participants.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#6B7280] mb-3">
-                    Fréquence
-                  </label>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        id="oneTime"
-                        name="frequency"
-                        checked={!isFrequentTask}
-                        onChange={() => {
-                          setIsFrequentTask(false)
-                          setFrequencyPerWeek(1)
-                        }}
-                        className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
-                      />
-                      <label htmlFor="oneTime" className="text-sm text-[#6B7280] cursor-pointer">
-                        Tâche ponctuelle (1 fois)
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        id="frequentTask"
-                        name="frequency"
-                        checked={isFrequentTask}
-                        onChange={() => setIsFrequentTask(true)}
-                        className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
-                      />
-                      <label htmlFor="frequentTask" className="text-sm text-[#6B7280] cursor-pointer">
-                        Tâche fréquente
-                      </label>
-                    </div>
-                    {isFrequentTask && (
-                      <div className="ml-7">
-                        <label className="block text-xs text-[#6B7280] mb-1">
-                          Fréquence par semaine
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="14"
-                          value={frequencyPerWeek}
-                          onChange={(e) => setFrequencyPerWeek(parseInt(e.target.value) || 1)}
-                          className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAssignModal(false)
-                    setAssigningTask(null)
-                  }}
-                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={editingAssignment ? handleUpdateAssignment : handleCreateAssignment}
-                  disabled={!selectedPerformer || loading}
-                  className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Enregistrement...' : editingAssignment ? 'Modifier' : 'Assigner'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Assignments Confirmation Modal */}
-        {showDeleteAssignmentsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg border border-[#E5E7EB] bg-white backdrop-blur-sm p-8">
-              <h2 className="mb-6 text-2xl font-bold text-[#1F2937]">
-                Confirmation de suppression
-              </h2>
-              
-              <p className="mb-6 text-[#6B7280]">
-                Êtes-vous sûr de vouloir supprimer toutes les assignations ? Cette action ne peut pas être annulée.
-              </p>
-
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteAssignmentsModal(false)}
-                  className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleResetAllAssignments}
-                  disabled={loading}
-                  className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Suppression...' : 'Confirmer'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          disabled={!selectedDate}
+          onClick={openWizard}
+          className="w-full rounded-xl bg-[#93C572] py-3 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {hasDeclarations ? 'Modifier les tâches' : 'Ajouter une tâche'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setFavoritesModalOpen(true)}
+          className="w-full rounded-xl border border-[#93C572] bg-white py-3 text-sm font-medium text-[#5a8f45] transition-colors hover:bg-[#93C572]/10"
+        >
+          Gérer les tâches du foyer
+        </button>
       </div>
+
+      {selectedDate && (
+        <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold text-[#1F2937]">
+            Jour sélectionné : {selectedDate}
+          </h2>
+          {declarations.length === 0 ? (
+            <p className="text-sm text-[#6B7280]">Aucune tâche ajoutée pour ce jour.</p>
+          ) : (
+            <ul className="space-y-3">
+              {declarations.map((d) => {
+                const cat = d.task_templates?.category as TaskCategory | undefined
+                const names =
+                  (d.task_templates?.name && translateTaskName(d.task_templates.name)) || '—'
+                const perf = (d.task_declaration_performers || [])
+                  .map((x) => participants.find((p) => p.id === x.participant_id)?.name)
+                  .filter(Boolean)
+                  .join(', ')
+                const think = (d.task_declaration_thinkers || [])
+                  .map((x) => participants.find((p) => p.id === x.participant_id)?.name)
+                  .filter(Boolean)
+                  .join(', ')
+                return (
+                  <li
+                    key={d.id}
+                    className="rounded-lg border border-[#F3F4F6] bg-[#FAFAF8] px-3 py-2 text-sm"
+                  >
+                    <p className="font-medium text-[#1F2937]">
+                      {cat ? `${CATEGORY_EMOJIS[cat]} ` : ''}
+                      {names}
+                    </p>
+                    <p className="text-xs">
+                      <span className="text-[#6B7280]">A fait : </span>
+                      <span className={PERFORMER_NAME_CLASS}>{perf || '—'}</span>
+                      <span className="text-[#6B7280]"> · A pensé : </span>
+                      <span className={THINKER_NAME_CLASS}>{think || '—'}</span>
+                    </p>
+                    <p className="text-xs text-[#9CA3AF]">
+                      Points réalisation {d.performer_points} · charge {d.mental_load_points}
+                    </p>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+
+      <HouseholdFavoritesModal
+        open={favoritesModalOpen}
+        onClose={() => setFavoritesModalOpen(false)}
+        householdId={currentHousehold.id}
+        templates={templates}
+        favorites={favorites}
+        onSaved={afterFavoritesSaved}
+      />
+
+      {selectedDate && (
+        <TaskDeclarationWizard
+          open={wizardOpen}
+          onClose={() => setWizardOpen(false)}
+          householdId={currentHousehold.id}
+          declaredOn={selectedDate}
+          participants={participants}
+          templates={templates}
+          favorites={favorites}
+          mode={hasDeclarations ? 'edit' : 'declare'}
+          initialDeclarations={declarations}
+          onSuccess={afterWizard}
+          onFavoritesChanged={() => void loadData()}
+        />
+      )}
+
       <SuccessToast message={toastMessage} />
     </div>
   )

@@ -2,49 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import {
   getParticipants,
   createParticipant,
   updateParticipant,
   deleteParticipant,
-  getParticipantBalance,
   type Participant,
   type Gender,
 } from '@/lib/supabase/participants'
-import {
-  getUserHouseholds,
-  getCurrentHousehold,
-  createHousehold,
-  type Household,
-} from '@/lib/supabase/households'
+import { getUserHouseholds, createHousehold, type Household } from '@/lib/supabase/households'
 import { translateGender, translateTaskName, translateCategory } from '@/lib/translations'
 import { pickHouseholdFromList, setStoredHouseholdId } from '@/lib/currentHouseholdStorage'
 import HouseholdSelector from '@/components/HouseholdSelector'
 import { ContextActionsMenu } from '@/components/ContextActionsMenu'
 import { canEditParticipant, canDeleteParticipant } from '@/lib/participantPermissions'
-import { getTasks, type TaskWithTemplate } from '@/lib/supabase/tasks'
-import { getTaskTemplates, type TaskTemplate, type TaskCategory } from '@/lib/supabase/taskTemplates'
-import { getAssignments, createAssignment, type AssignmentWithDetails } from '@/lib/supabase/assignments'
+import { getDeclarationsBetweenDates } from '@/lib/supabase/taskDeclarations'
+import { participantTotalInDeclarations } from '@/lib/v3/balanceAggregate'
+import { formatLocalDate } from '@/components/TaskDayPicker'
 import { SuccessToast, useSuccessToast } from '@/components/SuccessToast'
-
-/** Ordre d’affichage FR (comme la page Tâches) pour le filtre catégorie à l’assignation */
-const ASSIGN_TASK_CATEGORIES_FR = (
-  [
-    'administrative',
-    'car_maintenance',
-    'cleaning',
-    'cooking',
-    'diy',
-    'laundry',
-    'other',
-    'parenting',
-    'pet_care',
-    'shopping',
-    'travel',
-  ] as TaskCategory[]
-).sort((a, b) => translateCategory(a).localeCompare(translateCategory(b), 'fr'))
 
 export default function ParticipantsPage() {
   const router = useRouter()
@@ -63,23 +39,6 @@ export default function ParticipantsPage() {
 
   const [userId, setUserId] = useState<string | null>(null)
 
-  // Assignment modal states
-  const [showAssignModal, setShowAssignModal] = useState(false)
-  const [assigningToParticipant, setAssigningToParticipant] = useState<Participant | null>(null)
-  const [assignStep, setAssignStep] = useState<1 | 2>(1)
-  const [selectedCategory, setSelectedCategory] = useState<TaskCategory | ''>('')
-  const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null)
-  const [selectedTask, setSelectedTask] = useState<TaskWithTemplate | null>(null)
-  const [isPerformer, setIsPerformer] = useState<boolean>(true)
-  const [isThinker, setIsThinker] = useState<boolean>(false)
-  const [isFrequentTask, setIsFrequentTask] = useState<boolean>(false)
-  const [frequencyPerWeek, setFrequencyPerWeek] = useState<number>(1)
-
-  // Data for assignments
-  const [tasks, setTasks] = useState<TaskWithTemplate[]>([])
-  const [templates, setTemplates] = useState<TaskTemplate[]>([])
-  const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([])
-  const [expandedParticipants, setExpandedParticipants] = useState<Set<string>>(new Set())
   const [participantMenuKey, setParticipantMenuKey] = useState<string | null>(null)
   const { toastMessage, showSuccessToast } = useSuccessToast()
 
@@ -143,37 +102,22 @@ export default function ParticipantsPage() {
     if (!opts?.silent) setLoading(true)
     setError(null)
     try {
-      // Load all data in parallel
-      const [participantsResult, tasksResult, templatesResult, assignmentsResult] = await Promise.all([
-        getParticipants(householdId),
-        getTasks(householdId),
-        getTaskTemplates(),
-        getAssignments(householdId),
-      ])
-
+      const participantsResult = await getParticipants(householdId)
       if (participantsResult.error) throw participantsResult.error
-      if (tasksResult.error) throw tasksResult.error
-      if (templatesResult.error) throw templatesResult.error
-      if (assignmentsResult.error) throw assignmentsResult.error
-      
-      setParticipants(participantsResult.data || [])
-      setTasks(tasksResult.data || [])
-      setTemplates(templatesResult.data || [])
-      setAssignments(assignmentsResult.data || [])
-      
-      // Load balances for all participants
-      if (participantsResult.data) {
-        const balancePromises = participantsResult.data.map(async (p) => {
-          const { balance } = await getParticipantBalance(p.id)
-          return { id: p.id, balance }
-        })
-        const balanceResults = await Promise.all(balancePromises)
-        const balanceMap: Record<string, number> = {}
-        balanceResults.forEach(({ id, balance }) => {
-          balanceMap[id] = balance
-        })
-        setBalances(balanceMap)
+      const plist = participantsResult.data || []
+      setParticipants(plist)
+
+      const now = new Date()
+      const from = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1))
+      const to = formatLocalDate(new Date(now.getFullYear(), now.getMonth() + 1, 0))
+      const { data: decs, error: decErr } = await getDeclarationsBetweenDates(householdId, from, to)
+      if (decErr) throw decErr
+
+      const balanceMap: Record<string, number> = {}
+      for (const p of plist) {
+        balanceMap[p.id] = participantTotalInDeclarations(p.id, decs || [])
       }
+      setBalances(balanceMap)
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement des membres')
     } finally {
@@ -266,120 +210,6 @@ export default function ParticipantsPage() {
       setError(err.message || 'Erreur lors de la suppression')
     }
   }
-
-  // Assignment functions
-  const openAssignModal = (participant: Participant) => {
-    setAssigningToParticipant(participant)
-    setAssignStep(1)
-    setSelectedCategory('')
-    setSelectedTemplate(null)
-    setSelectedTask(null)
-    setIsPerformer(true)
-    setIsThinker(false)
-    setIsFrequentTask(false)
-    setFrequencyPerWeek(1)
-    setShowAssignModal(true)
-  }
-
-  const handleStep1Next = () => {
-    if (!selectedTemplate) return
-    
-    // Find or create task
-    const existingTask = tasks.find(t => t.template_id === String(selectedTemplate.id))
-    if (existingTask) {
-      setSelectedTask(existingTask)
-    } else {
-      // Task doesn't exist yet, we'll need to create it first
-      // For now, we'll proceed to step 2 and create task + assignment together
-      setSelectedTask(null)
-    }
-    setAssignStep(2)
-  }
-
-  const handleAssignTask = async () => {
-    if (!assigningToParticipant || !selectedTemplate || !currentHousehold) return
-
-    setError(null)
-    setLoading(true)
-    try {
-      let taskId: string
-
-      // Check if task exists, if not create it
-      const existingTask = tasks.find(t => t.template_id === String(selectedTemplate.id))
-      if (existingTask) {
-        taskId = existingTask.id
-      } else {
-        // Create task first
-        const { createTask } = await import('@/lib/supabase/tasks')
-        const { data: newTask, error: taskError } = await createTask(
-          currentHousehold.id,
-          selectedTemplate.id,
-          null,
-          null
-        )
-        if (taskError || !newTask) throw taskError || new Error('Erreur lors de la création de la tâche')
-        taskId = newTask.id
-      }
-
-      // Create assignment
-      const performerId = isPerformer ? assigningToParticipant.id : null
-      const thinkerId = isThinker ? assigningToParticipant.id : null
-      const frequency = isFrequentTask ? frequencyPerWeek : null
-
-      const { error } = await createAssignment(
-        taskId,
-        performerId,
-        thinkerId,
-        frequency
-      )
-      if (error) throw error
-
-      await loadParticipants(currentHousehold.id, { silent: true })
-      showSuccessToast()
-
-      // Close modal
-      setShowAssignModal(false)
-      setAssigningToParticipant(null)
-      setAssignStep(1)
-      setSelectedCategory('')
-      setSelectedTemplate(null)
-      setSelectedTask(null)
-      setIsPerformer(true)
-      setIsThinker(false)
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'assignation')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Get assignment stats for a participant
-  const getParticipantAssignmentStats = (participantId: string) => {
-    const performerAssignments = assignments.filter(a => a.performer_id === participantId)
-    const thinkerAssignments = assignments.filter(a => a.thinker_id === participantId)
-    const totalAssignments = new Set([
-      ...performerAssignments.map(a => a.task_id),
-      ...thinkerAssignments.map(a => a.task_id)
-    ]).size
-
-    return {
-      total: totalAssignments,
-      performed: performerAssignments.length,
-      thought: thinkerAssignments.length,
-    }
-  }
-
-  // Get assignments for a participant
-  const getParticipantAssignments = (participantId: string) => {
-    return assignments.filter(a => 
-      a.performer_id === participantId || a.thinker_id === participantId
-    )
-  }
-
-  const filteredTemplates = selectedCategory
-    ? templates.filter(t => t.category === selectedCategory)
-    : templates
-
 
   if (showCreateForm) {
     return (
@@ -636,333 +466,20 @@ export default function ParticipantsPage() {
                   })()}
                 </div>
 
-                {/* Assignment Stats */}
-                {(() => {
-                  const stats = getParticipantAssignmentStats(participant.id)
-                  return (
-                    <div className="mb-4 rounded-lg border border-[#E5E7EB] bg-[#FAFAF8] p-3">
-                      <p className="text-xs text-[#6B7280] mb-2">Tâches assignées : {stats.total}</p>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-[#6B7280]">Réalisées : </span>
-                          <span className="font-semibold text-[#8B5CF6]">{stats.performed}</span>
-                        </div>
-                        <div>
-                          <span className="text-[#6B7280]">Pensées : </span>
-                          <span className="font-semibold text-[#8B5CF6]">{stats.thought}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                <div className="rounded-lg border border-[#E5E7EB] bg-[#FAFAF8] p-3 mb-4">
-                  <p className="text-xs text-[#6B7280] mb-1">Balance (par semaine)</p>
+                <div className="mb-4 rounded-lg border border-[#E5E7EB] bg-[#FAFAF8] p-3">
+                  <p className="text-xs text-[#6B7280] mb-1">Points ce mois-ci (déclarations)</p>
                   <p className="text-2xl font-bold text-[#1F2937]">
-                    {balances[participant.id]?.toLocaleString() || 0} pts/sem
+                    {Math.round(balances[participant.id] ?? 0)} pts
+                  </p>
+                  <p className="mt-2 text-xs text-[#9CA3AF]">
+                    Les tâches se déclarent depuis l’onglet « Tâches » avec le calendrier.
                   </p>
                 </div>
-
-                {/* Assign Task Button */}
-                <button
-                  onClick={() => openAssignModal(participant)}
-                  className="w-full mb-4 rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c]"
-                >
-                  ➕ Assigner une tâche
-                </button>
-
-                {/* Details Accordion */}
-                {(() => {
-                  const participantAssignments = getParticipantAssignments(participant.id)
-                  if (participantAssignments.length === 0) return null
-
-                  return (
-                    <div className="border-t border-[#E5E7EB] pt-4">
-                      <button
-                        onClick={() => {
-                          const newExpanded = new Set(expandedParticipants)
-                          if (newExpanded.has(participant.id)) {
-                            newExpanded.delete(participant.id)
-                          } else {
-                            newExpanded.add(participant.id)
-                          }
-                          setExpandedParticipants(newExpanded)
-                        }}
-                        className="w-full flex items-center justify-between text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors"
-                      >
-                        <span>Détails tâches</span>
-                        <span>{expandedParticipants.has(participant.id) ? '▼' : '▶'}</span>
-                      </button>
-                      {expandedParticipants.has(participant.id) && (
-                        <div className="mt-2 space-y-2">
-                          {participantAssignments.map((assignment) => {
-                            const task = assignment.tasks
-                            const isPerformer = assignment.performer_id === participant.id
-                            const isThinker = assignment.thinker_id === participant.id
-                            
-                            return (
-                              <div
-                                key={assignment.id}
-                                className="rounded border border-[#E5E7EB] bg-white p-2 text-xs"
-                              >
-                                <p className="font-medium text-[#1F2937]">
-                                  {translateTaskName(task.task_templates.name)}
-                                </p>
-                                <div className="mt-1 space-y-1">
-                                  {isPerformer && (
-                                    <p className="text-[#8B5CF6]">
-                                      ✓ Réalisée {assignment.frequency_per_week 
-                                        ? `${assignment.frequency_per_week}x/semaine`
-                                        : '(ponctuelle)'}
-                                    </p>
-                                  )}
-                                  {isThinker && (
-                                    <p className="text-[#8B5CF6]">
-                                      💭 Charge mentale {assignment.frequency_per_week 
-                                        ? `${assignment.frequency_per_week}x/semaine`
-                                        : '(ponctuelle)'}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })()}
               </div>
             ))}
           </div>
         )}
 
-        {/* Assign Task Modal */}
-        {showAssignModal && assigningToParticipant && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-lg border border-[#E5E7EB] bg-white p-8">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#1F2937]">
-                  Assigner une tâche à {assigningToParticipant.name}
-                </h2>
-                <button
-                  onClick={() => {
-                    setShowAssignModal(false)
-                    setAssigningToParticipant(null)
-                    setAssignStep(1)
-                    setSelectedCategory('')
-                    setSelectedTemplate(null)
-                    setSelectedTask(null)
-                  }}
-                  className="text-[#6B7280] hover:text-[#1F2937] transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Step Indicator */}
-              <div className="mb-6 flex items-center gap-2">
-                <div className={`flex-1 h-1 rounded ${assignStep >= 1 ? 'bg-[#93C572]' : 'bg-gray-100'}`} />
-                <div className={`flex-1 h-1 rounded ${assignStep >= 2 ? 'bg-[#93C572]' : 'bg-gray-100'}`} />
-              </div>
-              <div className="mb-6 text-center text-sm text-[#6B7280]">
-                Étape {assignStep}/2
-              </div>
-
-              {/* Step 1: Task Selection */}
-              {assignStep === 1 && (
-                <div className="space-y-4">
-                  {/* Category Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                      Catégorie
-                    </label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => {
-                        setSelectedCategory(e.target.value as TaskCategory | '')
-                        setSelectedTemplate(null)
-                      }}
-                      className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                    >
-                      <option value="">Toutes les catégories</option>
-                      {ASSIGN_TASK_CATEGORIES_FR.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {translateCategory(cat)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Template Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#6B7280] mb-2">
-                      Tâche {selectedCategory && `(${translateCategory(selectedCategory)})`}
-                    </label>
-                    {filteredTemplates.length === 0 ? (
-                      <div className="text-sm text-[#6B7280] py-2">
-                        <p>
-                          {selectedCategory 
-                            ? `Aucune tâche disponible dans la catégorie "${translateCategory(selectedCategory)}".`
-                            : 'Sélectionnez une catégorie pour filtrer les tâches.'}
-                        </p>
-                      </div>
-                    ) : (
-                      <select
-                        value={selectedTemplate ? String(selectedTemplate.id) : ''}
-                        onChange={(e) => {
-                          const selectedId = e.target.value
-                          if (!selectedId) {
-                            setSelectedTemplate(null)
-                            return
-                          }
-                          const template = filteredTemplates.find(t => String(t.id) === selectedId) ||
-                            templates.find(t => String(t.id) === selectedId)
-                          if (template) {
-                            setSelectedTemplate(template)
-                          } else {
-                            setSelectedTemplate(null)
-                          }
-                        }}
-                        className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                      >
-                        <option value="">Sélectionnez une tâche</option>
-                        {filteredTemplates.map((template) => (
-                          <option key={template.id} value={String(template.id)}>
-                            {translateTaskName(template.name)}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end gap-4 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAssignModal(false)
-                        setAssigningToParticipant(null)
-                        setAssignStep(1)
-                        setSelectedCategory('')
-                        setSelectedTemplate(null)
-                      }}
-                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={handleStep1Next}
-                      disabled={!selectedTemplate}
-                      className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Suivant
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Assignment Type and Frequency */}
-              {assignStep === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#6B7280] mb-3">
-                      Type d'assignation
-                    </label>
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isPerformer}
-                          onChange={(e) => setIsPerformer(e.target.checked)}
-                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572] rounded"
-                        />
-                        <div>
-                          <span className="text-[#1F2937] font-medium">Réalisation</span>
-                          <p className="text-xs text-[#6B7280]">Le membre effectue la tâche</p>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isThinker}
-                          onChange={(e) => setIsThinker(e.target.checked)}
-                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572] rounded"
-                        />
-                        <div>
-                          <span className="text-[#1F2937] font-medium">Charge mentale</span>
-                          <p className="text-xs text-[#6B7280]">Le membre pense à la tâche</p>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[#6B7280] mb-3">
-                      Fréquence
-                    </label>
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="frequency"
-                          checked={!isFrequentTask}
-                          onChange={() => {
-                            setIsFrequentTask(false)
-                            setFrequencyPerWeek(1)
-                          }}
-                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
-                        />
-                        <span className="text-[#1F2937]">Tâche ponctuelle</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="frequency"
-                          checked={isFrequentTask}
-                          onChange={() => setIsFrequentTask(true)}
-                          className="h-4 w-4 text-[#93C572] focus:ring-[#93C572]"
-                        />
-                        <span className="text-[#1F2937]">Tâche fréquente</span>
-                      </label>
-                      {isFrequentTask && (
-                        <div className="ml-7">
-                          <label className="block text-xs text-[#6B7280] mb-1">
-                            Fréquence par semaine
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="14"
-                            value={frequencyPerWeek}
-                            onChange={(e) => setFrequencyPerWeek(parseInt(e.target.value) || 1)}
-                            className="w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1F2937] focus:border-[#93C572] focus:outline-none focus:ring-2 focus:ring-[#93C572]/20"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-4 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setAssignStep(1)}
-                      className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2 text-sm font-medium text-[#1F2937] transition-colors hover:bg-gray-100"
-                    >
-                      Retour
-                    </button>
-                    <button
-                      onClick={handleAssignTask}
-                      disabled={loading || (isFrequentTask && frequencyPerWeek < 1) || (!isPerformer && !isThinker)}
-                      className="rounded-lg bg-[#93C572] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#7bad5c] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? 'Assignation...' : 'Assigner'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
       <SuccessToast message={toastMessage} />
     </div>

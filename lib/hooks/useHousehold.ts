@@ -16,42 +16,47 @@ export function useHousehold(redirectIfNone: boolean = true) {
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        if (redirectIfNone) router.push('/login')
+  const loadHouseholds = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      setHouseholds([])
+      setCurrentHousehold(null)
+      if (redirectIfNone) router.push('/login')
+      setLoading(false)
+      return
+    }
+
+    setUserId(user.id)
+
+    try {
+      const { data, error } = await getUserHouseholds(user.id)
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        if (redirectIfNone) {
+          router.push('/select-household')
+        }
+        setHouseholds([])
+        setCurrentHousehold(null)
         setLoading(false)
         return
       }
 
-      setUserId(user.id)
-
-      try {
-        const { data, error } = await getUserHouseholds(user.id)
-        if (error) throw error
-
-        if (!data || data.length === 0) {
-          // No household
-          if (redirectIfNone) {
-            router.push('/select-household')
-          }
-          setLoading(false)
-          return
-        }
-
-        setHouseholds(data)
-        const chosen = pickHouseholdFromList(data, user.id)
-        setCurrentHousehold(chosen)
-        setLoading(false)
-      } catch (err) {
-        console.error('Error loading households:', err)
-        setLoading(false)
-      }
+      setHouseholds(data)
+      const chosen = pickHouseholdFromList(data, user.id)
+      setCurrentHousehold(chosen)
+      setLoading(false)
+    } catch (err) {
+      console.error('Error loading households:', err)
+      setLoading(false)
     }
-
-    init()
   }, [router, redirectIfNone])
+
+  useEffect(() => {
+    void loadHouseholds()
+  }, [loadHouseholds])
 
   const setCurrentHouseholdPersisted = useCallback(
     (household: Household) => {
@@ -67,6 +72,6 @@ export function useHousehold(redirectIfNone: boolean = true) {
     loading,
     userId,
     setCurrentHousehold: setCurrentHouseholdPersisted,
+    refetchHouseholds: loadHouseholds,
   }
 }
-
