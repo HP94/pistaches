@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { signOut } from '@/lib/supabase/auth'
+import { signOut, signOutLocal } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
 import { AddToHomeScreenModal, usePwaStandaloneMode } from '@/components/AddToHomeScreenDrawer'
 import { LegalPageLinks } from '@/components/LegalPageLinks'
@@ -40,9 +40,12 @@ export default function ProfileMenu() {
 
   const handleSignOut = async () => {
     setShowMenu(false)
-    await signOut()
-    router.push('/login')
-    router.refresh()
+    const { error } = await signOut()
+    if (error) {
+      await signOutLocal()
+    }
+    // Navigation complète : évite de rester sur / si le middleware voit encore une session
+    window.location.assign('/login')
   }
 
   if (loading || !user) {

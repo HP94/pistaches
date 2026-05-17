@@ -63,8 +63,18 @@ export default function Home() {
     }
 
     void init()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.replace('/login')
+      }
+    })
+
     return () => {
       cancelled = true
+      subscription.unsubscribe()
     }
   }, [router])
 

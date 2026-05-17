@@ -55,11 +55,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/accept-cgu', request.url))
   }
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/participants', '/tasks', '/balance']
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  )
+  // Routes that require authentication (exact `/` — not every path)
+  const isProtectedRoute =
+    pathname === '/' ||
+    pathname === '/select-household' ||
+    pathname.startsWith('/select-household/') ||
+    pathname.startsWith('/participants') ||
+    pathname.startsWith('/tasks') ||
+    pathname.startsWith('/balance')
 
   // Connexion / inscription / demande de lien : rediriger vers l’accueil si déjà connecté.
   // Ne pas inclure /update-password : la session « recovery » est nécessaire pour changer le MDP.
