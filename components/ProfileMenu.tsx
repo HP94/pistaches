@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { signOut, signOutLocal } from '@/lib/supabase/auth'
 import type { User } from '@supabase/supabase-js'
@@ -14,7 +14,6 @@ const triggerClass =
 
 export default function ProfileMenu() {
   const pathname = usePathname()
-  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showMenu, setShowMenu] = useState(false)
@@ -32,11 +31,10 @@ export default function ProfileMenu() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      router.refresh()
     })
 
     return () => subscription.unsubscribe()
-  }, [router])
+  }, [])
 
   const handleSignOut = async () => {
     setShowMenu(false)

@@ -23,6 +23,7 @@ import {
   type MatrixState,
 } from '@/lib/v3/declarationMatrix'
 import { wrapLabelByWords } from '@/lib/taskLabelWrap'
+import { formatSupabaseError } from '@/lib/auth/errorMessage'
 
 type WizardStep = 'matrix' | 'catalog' | 'catalogPoints'
 
@@ -178,7 +179,7 @@ export default function TaskDeclarationWizard({
       onSuccess()
       onClose()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur à l’enregistrement')
+      setError(formatSupabaseError(err, 'Erreur à l’enregistrement'))
     } finally {
       setSaving(false)
     }
@@ -228,7 +229,7 @@ export default function TaskDeclarationWizard({
       setStep('matrix')
       setCatalogTemplate(null)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur')
+      setError(formatSupabaseError(err, 'Erreur'))
     } finally {
       setSaving(false)
     }

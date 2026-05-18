@@ -1,5 +1,15 @@
 import { supabase } from './client'
+import { ensureSupabaseSession } from './ensureSession'
 import type { TaskTemplate } from './taskTemplates'
+
+/** Clé stable pour comparer template_id (PostgREST renvoie souvent un number, le client des strings). */
+function templateIdKey(id: string | number): string {
+  return String(id)
+}
+
+function templateIdForDb(id: string | number): number {
+  return typeof id === 'number' ? id : Number(id)
+}
 
 export interface TaskDeclaration {
   id: string
@@ -88,13 +98,18 @@ export async function upsertDeclarationsForDay(
   declaredOn: string,
   rows: DeclarationRowInput[]
 ) {
+  const sessionCheck = await ensureSupabaseSession()
+  if (!sessionCheck.ok) {
+    return { error: new Error(sessionCheck.message) }
+  }
+
   for (const row of rows) {
     const { data: dec, error: upErr } = await supabase
       .from('task_declarations')
       .upsert(
         {
           household_id: householdId,
-          template_id: row.templateId,
+          template_id: templateIdForDb(row.templateId),
           declared_on: declaredOn,
           performer_points: row.performerPoints,
           mental_load_points: row.mentalLoadPoints,
@@ -165,9 +180,9 @@ export async function syncDeclarationsForDay(
   const { data: existing, error: fetchErr } = await getDeclarationsForDate(householdId, declaredOn)
   if (fetchErr) return { error: fetchErr }
 
-  const kept = new Set(rows.map((r) => r.templateId))
+  const kept = new Set(rows.map((r) => templateIdKey(r.templateId)))
   for (const dec of existing || []) {
-    if (!kept.has(dec.template_id)) {
+    if (!kept.has(templateIdKey(dec.template_id))) {
       const { error: delErr } = await deleteDeclaration(dec.id)
       if (delErr) return { error: delErr }
     }

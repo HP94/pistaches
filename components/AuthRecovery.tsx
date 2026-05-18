@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { redirectToLoginIfNeeded } from '@/lib/auth/redirectToLogin'
 import { signOutLocal } from '@/lib/supabase/auth'
 
 /** Max time to wait for first session bootstrap; if exceeded, assume stuck refresh loop */
@@ -46,6 +47,7 @@ export default function AuthRecovery() {
         if (error) {
           console.warn('[auth] getSession reported error, clearing local session', error)
           await signOutLocal()
+          redirectToLoginIfNeeded()
         }
       } catch (e) {
         if (cancelled) return
@@ -53,9 +55,11 @@ export default function AuthRecovery() {
         if (msg === 'SESSION_BOOTSTRAP_TIMEOUT') {
           console.warn('[auth] Session bootstrap timed out — clearing local session to recover')
           await signOutLocal()
+          redirectToLoginIfNeeded()
         } else {
           console.warn('[auth] Session bootstrap failed — clearing local session', e)
           await signOutLocal()
+          redirectToLoginIfNeeded()
         }
       }
     }
@@ -69,6 +73,7 @@ export default function AuthRecovery() {
       if (event === 'TOKEN_REFRESHED' && !session) {
         console.warn('[auth] TOKEN_REFRESHED with no session — clearing local session')
         await signOutLocal()
+        redirectToLoginIfNeeded()
       }
     })
 

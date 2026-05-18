@@ -37,8 +37,8 @@ export default function TasksPage() {
 
   const hasDeclarations = declarations.length > 0
 
-  const loadData = useCallback(async () => {
-    if (!currentHousehold) return
+  const loadData = useCallback(async (): Promise<boolean> => {
+    if (!currentHousehold) return false
     setLoading(true)
     setError(null)
     try {
@@ -58,8 +58,10 @@ export default function TasksPage() {
       setTemplates(tRes.data || [])
       setFavorites(fRes.data || [])
       setDeclarations((dRes.data as TaskDeclarationWithRelations[]) || [])
+      return true
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur de chargement')
+      return false
     } finally {
       setLoading(false)
     }
@@ -78,14 +80,14 @@ export default function TasksPage() {
     setWizardOpen(true)
   }
 
-  const afterWizard = () => {
-    void loadData()
-    showSuccessToast()
+  const afterWizard = async () => {
+    const ok = await loadData()
+    if (ok) showSuccessToast()
   }
 
-  const afterFavoritesSaved = () => {
-    void loadData()
-    showSuccessToast()
+  const afterFavoritesSaved = async () => {
+    const ok = await loadData()
+    if (ok) showSuccessToast()
   }
 
   if (householdLoading || loading) {
